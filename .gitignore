@@ -32,7 +32,12 @@
 *.app
 
 
+
 # Pictures
 *.png
 *.jpeg
 *.jpg
+
+# Other
+*.dSYM
+*.txt

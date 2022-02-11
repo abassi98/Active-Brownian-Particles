@@ -29,21 +29,26 @@ class ABP_2d
     vector<double> thetas;
 
     // Coefficients
+    unsigned N_steps; 
     double dt;
     double v;
     double D_r;
     double D_theta;
     double k;
     double L;
+    double mu;
     double w;
 
     ABP_2d();
-    ~ABP_2d();
 
-    void __init__(vec2d, double);
-    void theta_step();
+    void __init__(vec2d, double, unsigned, double, double, double, double, double, double, double, double );
+
     void compute_force();
-    void position_step();
+    void position_step(double, double);
+    void theta_step(double);
+   
+    void dynamics();
+
     void print_dynamics(string);
 
 };

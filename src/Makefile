@@ -3,7 +3,7 @@ FC = g++
 FCLAGS = -g -O3 -Wall -Werror -std=c++11
 
 
-SOURCE = volume.cpp cell_volume.cpp sampler.cpp main.cpp
+SOURCE = functions.cpp main.cpp
 
 all: main
 
