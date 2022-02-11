@@ -44,6 +44,19 @@ void ABP_2d::__init__(vec2d init_position, double init_theta,  unsigned _N_steps
     L = _L;
     mu = _mu;
     w = _w;
+
+    // Print parameters on a file for plotting
+    ofstream par("parameters.txt");
+    par<<"N_steps"<<" "<<N_steps<<endl;
+    par<<"dt"<<" "<<dt<<endl;
+    par<<"v"<<" "<<v<<endl;
+    par<<"D_r"<<" "<<D_r<<endl;
+    par<<"D_theta"<<" "<<D_theta<<endl;
+    par<<"k"<<" "<<k<<endl;
+    par<<"L"<<" "<<L<<endl;
+    par<<"mu"<<" "<<mu<<endl;
+    par<<"w"<<" "<<w<<endl;
+    par.close();
 }
 
 void ABP_2d::compute_force(){
@@ -88,7 +101,7 @@ void ABP_2d::dynamics(){
     normal_distribution<double> normal_theta;
      
 
-    for(unsigned step=0; step<N_steps; ++step){
+    for(unsigned step=0; step<N_steps-1; ++step){
         // Generate white gaussian noise
         double noise_x = normal_x(engine);
         double noise_y = normal_y(engine);
@@ -99,6 +112,9 @@ void ABP_2d::dynamics(){
         position_step(noise_x, noise_y); // Update the position, appending the new posistion to the queu of the positions vector
         theta_step(noise_theta); // Update the angle theta, appending the new angle to the queu of the positions vector
     }
+
+    // Compute last force
+    compute_force();
 }
 
 void ABP_2d::print_dynamics(string filename){
