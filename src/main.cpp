@@ -13,13 +13,13 @@ int main()
     srand(0);
 
     // Set parameters
-    unsigned _N_steps = 10000;
-    double _dt = 0.001;
+    unsigned _N_steps = 1000;
+    double _dt = 0.0001;
     double _v = 3.0;
     double _D_r = 1.0;
     double _D_theta = 1.0;
     double _k = 1.0;
-    double _L = 10.0;
+    double _L = 1.0;
     double _mu = 1.0;
     double _w = 1.0;
 
