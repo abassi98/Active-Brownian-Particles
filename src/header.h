@@ -25,7 +25,6 @@ class ABP_2d
     
     // Dynamical variables
     vector<vec2d> positions;
-    vector<vec2d> forces;
     vector<double> thetas;
 
     // Coefficients
@@ -43,7 +42,7 @@ class ABP_2d
 
     void __init__(vec2d, double, unsigned, double, double, double, double, double, double, double, double );
 
-    void compute_force();
+    vec2d compute_force();
     void position_step(double, double);
     void theta_step(double);
    

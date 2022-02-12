@@ -59,29 +59,48 @@ void ABP_2d::__init__(vec2d init_position, double init_theta,  unsigned _N_steps
     par.close();
 }
 
-void ABP_2d::compute_force(){
-    vec2d next_force;
+vec2d ABP_2d::compute_force(){
+    /**
+     * @brief Compute force acting on a particle due to potential, take its last position
+     * To called after there is at least one element in positions
+     * 
+     */
+    vec2d force;
 
     // Compute force
-    next_force.x = - 8.0*M_PI/L*k*cos(8*M_PI*positions.back().x/L);
-    next_force.y = - 8.0*M_PI/L*k*cos(8*M_PI*positions.back().y/L);
+    force.x = - 8.0*M_PI/L*k*cos(8*M_PI*positions.back().x/L);
+    force.y = - 8.0*M_PI/L*k*cos(8*M_PI*positions.back().y/L);
 
-    forces.push_back(next_force);
+    return force;
 
 }
 
 void ABP_2d::position_step(double noise_x, double noise_y){
+    /**
+     * @brief Copmute next position and append to vector positions
+     * To be called after __init__()
+     * 
+     */
 
     vec2d next_position;
+    vec2d force;
+
+    // Compute force acting on last position
+    force = compute_force();
 
     // Compute next position
-    next_position.x = positions.back().x + v*cos(thetas.back())*dt + sqrt(2*D_r*dt)*noise_x + mu*forces.back().x*dt;
-    next_position.y = positions.back().y + v*cos(thetas.back())*dt + sqrt(2*D_r*dt)*noise_y + mu*forces.back().y*dt;
+    next_position.x = positions.back().x + v*cos(thetas.back())*dt + sqrt(2*D_r*dt)*noise_x + mu*force.x*dt;
+    next_position.y = positions.back().y + v*cos(thetas.back())*dt + sqrt(2*D_r*dt)*noise_y + mu*force.y*dt;
 
+    // Append to vector positions
     positions.push_back(next_position);
 }
 
-void ABP_2d::theta_step(double noise_theta){    
+void ABP_2d::theta_step(double noise_theta){   
+    /**
+     * @brief Compute next orientation
+     * 
+     */
     double next_orientation = thetas.back() + w*dt + sqrt(2*D_theta*dt)*noise_theta;
     thetas.push_back(next_orientation);
 }
@@ -108,19 +127,15 @@ void ABP_2d::dynamics(){
         double noise_theta = normal_theta(engine);
 
         // Dynamics steps
-        compute_force(); // Compute force acting on the particle due to potential, take last position which is the actual one
         position_step(noise_x, noise_y); // Update the position, appending the new posistion to the queu of the positions vector
         theta_step(noise_theta); // Update the angle theta, appending the new angle to the queu of the positions vector
     }
-
-    // Compute last force
-    compute_force();
 }
 
 void ABP_2d::print_dynamics(string filename){
     ofstream out(filename);
     for(unsigned i=0; i<positions.size(); ++i){
-        out<<positions[i].x<<" "<<positions[i].y<<" "<<thetas[i]<<" "<<forces[i].x<<" "<<forces[i].y<<endl;
+        out<<positions[i].x<<" "<<positions[i].y<<" "<<thetas[i]<<endl;
     }
     out.close();
 }
