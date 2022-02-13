@@ -38,10 +38,9 @@ class ABP_2d
     double mu;
     double w;
 
-    ABP_2d();
+    ABP_2d(vec2d, double, unsigned, double, double, double, double, double, double, double, double );
 
-    void __init__(vec2d, double, unsigned, double, double, double, double, double, double, double, double );
-
+    double potential(vec2d);
     vec2d compute_force();
     void position_step(double, double);
     void theta_step(double);
@@ -49,6 +48,8 @@ class ABP_2d
     void dynamics();
 
     void print_dynamics(string);
+
+    bool is_near_minimum(vec2d);
 
 };
 

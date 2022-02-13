@@ -2,23 +2,10 @@
 
 using namespace std;
 
-ABP_2d::ABP_2d(){
-    /**
-     * @brief Default constructor, all variables set to zero
-     * 
-     */
-    dt = 0;
-    v = 0;
-    D_r = 0;
-    D_theta = 0;
-    k = 0;
-    L = 0;
-    w = 0;
-}
 
-void ABP_2d::__init__(vec2d init_position, double init_theta,  unsigned _N_steps, double _dt, double _v, double _D_r, double _D_theta, double _k, double _L, double  _mu, double _w){
+ABP_2d::ABP_2d(vec2d init_position, double init_theta,  unsigned _N_steps, double _dt, double _v, double _D_r, double _D_theta, double _k, double _L, double  _mu, double _w){
     /**
-     * @brief Initialize the position and the orientation of the particle
+     * @brief Constructor: initialize the position and the orientation of the particle
      * make sure to call it before any dynamics step
      * 
      * @param init_position is the initial position
@@ -57,6 +44,14 @@ void ABP_2d::__init__(vec2d init_position, double init_theta,  unsigned _N_steps
     par<<"mu"<<" "<<mu<<endl;
     par<<"w"<<" "<<w<<endl;
     par.close();
+}
+
+double ABP_2d::potential(vec2d r){
+    /**
+     * @brief Compute the potential at position r
+     * 
+     */
+    return k*(sin(8*M_PI*r.x/L) + sin(8*M_PI*r.y/L));
 }
 
 vec2d ABP_2d::compute_force(){
@@ -138,6 +133,22 @@ void ABP_2d::print_dynamics(string filename){
         out<<positions[i].x<<" "<<positions[i].y<<" "<<thetas[i]<<endl;
     }
     out.close();
+}
+
+bool ABP_2d::is_near_minimum(vec2d r){
+    /**
+     * @brief Check if the position is inside a minimum region
+     * Defined to have potential energy <=-1.5
+     * 
+     */
+    bool is_near = false;
+    double u = potential(r);
+    cout<<" ìpotential "<<u<<endl;
+    if (u<-1.5){
+        is_near = true;
+    }
+
+    return is_near;
 }
 
 
