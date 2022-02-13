@@ -2,8 +2,23 @@
 
 using namespace std;
 
+double point::distance(point _r){
+    return sqrt((x-_r.x)*(x-_r.x) + (y-_r.y)*(y-_r.y));
+}
 
-ABP_2d::ABP_2d(vec2d init_position, double init_theta,  unsigned _N_steps, double _dt, double _v, double _D_r, double _D_theta, double _k, double _L, double  _mu, double _w){
+bool is_inside_target(point A, region target){
+    /**
+     * @brief Check if a point A is inside region target
+     */
+    bool is_near = false;
+    if (A.distance(target) <  target.radius){
+        is_near = true;
+    }
+
+    return is_near;
+}
+
+ABP_2d::ABP_2d(point init_position, double init_theta, double _dt, double _v, double _D_r, double _D_theta, double _k, double _L, double  _mu, double _w){
     /**
      * @brief Constructor: initialize the position and the orientation of the particle
      * make sure to call it before any dynamics step
@@ -22,7 +37,6 @@ ABP_2d::ABP_2d(vec2d init_position, double init_theta,  unsigned _N_steps, doubl
     thetas.push_back(init_theta);
 
     // Set parameters
-    N_steps = _N_steps;
     dt = _dt;
     v = _v;
     D_r = _D_r;
@@ -34,7 +48,6 @@ ABP_2d::ABP_2d(vec2d init_position, double init_theta,  unsigned _N_steps, doubl
 
     // Print parameters on a file for plotting
     ofstream par("parameters.txt");
-    par<<"N_steps"<<" "<<N_steps<<endl;
     par<<"dt"<<" "<<dt<<endl;
     par<<"v"<<" "<<v<<endl;
     par<<"D_r"<<" "<<D_r<<endl;
@@ -46,7 +59,16 @@ ABP_2d::ABP_2d(vec2d init_position, double init_theta,  unsigned _N_steps, doubl
     par.close();
 }
 
-double ABP_2d::potential(vec2d r){
+ABP_2d::~ABP_2d(){
+    /**
+     * @brief Destuctor, clear position and theta vectors
+     * 
+     */
+    positions.clear();
+    thetas.clear();
+}
+
+double ABP_2d::potential(point r){
     /**
      * @brief Compute the potential at position r
      * 
@@ -54,13 +76,13 @@ double ABP_2d::potential(vec2d r){
     return k*(sin(8*M_PI*r.x/L) + sin(8*M_PI*r.y/L));
 }
 
-vec2d ABP_2d::compute_force(){
+point ABP_2d::compute_force(){
     /**
      * @brief Compute force acting on a particle due to potential, take its last position
      * To called after there is at least one element in positions
      * 
      */
-    vec2d force;
+    point force;
 
     // Compute force
     force.x = - 8.0*M_PI/L*k*cos(8*M_PI*positions.back().x/L);
@@ -77,8 +99,8 @@ void ABP_2d::position_step(double noise_x, double noise_y){
      * 
      */
 
-    vec2d next_position;
-    vec2d force;
+    point next_position;
+    point force;
 
     // Compute force acting on last position
     force = compute_force();
@@ -102,7 +124,7 @@ void ABP_2d::theta_step(double noise_theta){
 
 
 
-void ABP_2d::dynamics(){
+void ABP_2d::dynamics(unsigned N_steps){
     /**
      * @brief Perform stochastic dynamics
      * 
@@ -135,7 +157,7 @@ void ABP_2d::print_dynamics(string filename){
     out.close();
 }
 
-bool ABP_2d::is_near_minimum(vec2d r){
+bool ABP_2d::is_near_minimum(point r){
     /**
      * @brief Check if the position is inside a minimum region
      * Defined to have potential energy <=-1.5
@@ -143,13 +165,58 @@ bool ABP_2d::is_near_minimum(vec2d r){
      */
     bool is_near = false;
     double u = potential(r);
-    cout<<" ìpotential "<<u<<endl;
     if (u<-1.5){
         is_near = true;
     }
 
     return is_near;
 }
+
+
+void ABP_2d::search_target(region target, unsigned max_num_steps){
+    /**
+     * @brief Run dynamics until the particle hit (is inside) the target region
+     * 
+     */
+    // Random generator
+    default_random_engine engine;
+    normal_distribution<double> normal_x;
+    normal_distribution<double> normal_y;
+    normal_distribution<double> normal_theta;
+
+    // Stop condition
+    bool is_inside = false;
+
+    // Step counter
+    unsigned step = 0;
+
+    cout<<"Starting search target..."<<endl;
+
+    while (is_inside==false && step < max_num_steps){
+        // Generate white gaussian noise
+        double noise_x = normal_x(engine);
+        double noise_y = normal_y(engine);
+        double noise_theta = normal_theta(engine);
+
+        // Dynamics steps
+        position_step(noise_x, noise_y); // Update the position, appending the new posistion to the queu of the positions vector
+        theta_step(noise_theta); // Update the angle theta, appending the new angle to the queu of the positions vector
+
+        // Update step counter and stop condition
+        is_inside = is_inside_target(positions.back(), target);
+        ++step;
+    }
+
+    if(step==max_num_steps){
+        cout<<"Target search finished before finding the target -> increase maximum mnumber of steps."<<endl;
+    }
+    else{
+        cout<<"Target found after "<<step<<" steps"<<endl;
+    }
+    
+}
+
+
 
 
 

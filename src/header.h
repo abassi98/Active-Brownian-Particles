@@ -13,22 +13,31 @@
 
 using namespace std;
 
-struct vec2d {
+ class point {
+    public:
+
     double x = 0;
     double y = 0;
+
+    double distance(point);
 };
 
+class region : public point {
+    public:
+    double radius = 1;
+};
+
+bool is_inside_target(point, region);
 
 class ABP_2d
 {
     public:
     
     // Dynamical variables
-    vector<vec2d> positions;
+    vector<point> positions;
     vector<double> thetas;
 
-    // Coefficients
-    unsigned N_steps; 
+    // Coefficients 
     double dt;
     double v;
     double D_r;
@@ -38,18 +47,25 @@ class ABP_2d
     double mu;
     double w;
 
-    ABP_2d(vec2d, double, unsigned, double, double, double, double, double, double, double, double );
+    ABP_2d(point, double, double, double, double, double, double, double, double, double );
+    ~ABP_2d();
 
-    double potential(vec2d);
-    vec2d compute_force();
+    double potential(point);
+    point compute_force();
     void position_step(double, double);
     void theta_step(double);
    
-    void dynamics();
+    void dynamics(unsigned);
 
+    
     void print_dynamics(string);
 
-    bool is_near_minimum(vec2d);
+   
+    bool is_near_minimum(point);
+
+    void search_target(region, unsigned);
+
+
 
 };
 
