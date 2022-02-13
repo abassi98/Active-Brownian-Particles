@@ -90,7 +90,7 @@ void ABP_2d::position_step(double noise_x, double noise_y){
 
     // Compute next position
     next_position.x = positions.back().x + v*cos(thetas.back())*dt + sqrt(2*D_r*dt)*noise_x + mu*force.x*dt;
-    next_position.y = positions.back().y + v*cos(thetas.back())*dt + sqrt(2*D_r*dt)*noise_y + mu*force.y*dt;
+    next_position.y = positions.back().y + v*sin(thetas.back())*dt + sqrt(2*D_r*dt)*noise_y + mu*force.y*dt;
 
     // Append to vector positions
     positions.push_back(next_position);

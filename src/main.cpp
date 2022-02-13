@@ -15,7 +15,7 @@ int main()
     // Set parameters
     unsigned _N_steps = 2000;
     double _dt = 0.0001;
-    double _v = 1.0;
+    double _v =2.0;
     double _D_r = 1.0;
     double _D_theta = 1.0;
     double _k = 1.0;

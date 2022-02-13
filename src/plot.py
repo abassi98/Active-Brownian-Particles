@@ -49,7 +49,7 @@ plt.plot(x_end, y_end, c = "red", marker = "o", ms = 10, ls  = "",label = "End" 
 plt.title("Active brownian particle dynamics")
 plt.xlabel("x")
 plt.ylabel("y")
-plt.xticks([min(x_dyn)*1.1, (min(x_dyn) + max(x_dyn))*0.55,max(x_dyn) ])
+plt.xticks([min(x_dyn)*1.1, (min(x_dyn) + max(x_dyn))*0.55, max(x_dyn)*1.1 ])
 plt.yticks([min(y_dyn)*1.1,  (min(y_dyn) + max(y_dyn))*0.55, max(y_dyn)*1.1 ])
 plt.legend()
 plt.tight_layout()
