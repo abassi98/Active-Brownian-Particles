@@ -2,11 +2,11 @@
 
 using namespace std;
 
-double point::distance(point _r){
+double point::distance(point &_r){
     return sqrt((x-_r.x)*(x-_r.x) + (y-_r.y)*(y-_r.y));
 }
 
-bool is_inside_target(point A, region target){
+bool is_inside_target(point &A, region &target){
     /**
      * @brief Check if a point A is inside region target
      */
@@ -18,7 +18,7 @@ bool is_inside_target(point A, region target){
     return is_near;
 }
 
-ABP_2d::ABP_2d(point init_position, double init_theta, double _dt, double _v, double _D_r, double _D_theta, double _k, double _L, double  _mu, double _w){
+ABP_2d::ABP_2d(point &init_position, double &init_theta, double &_dt, double &_v, double &_D_r, double &_D_theta, double &_k, double &_L, double & _mu, double &_w){
     /**
      * @brief Constructor: initialize the position and the orientation of the particle
      * make sure to call it before any dynamics step
@@ -68,12 +68,12 @@ ABP_2d::~ABP_2d(){
     thetas.clear();
 }
 
-double ABP_2d::potential(point r){
+double ABP_2d::potential(point &_r){
     /**
      * @brief Compute the potential at position r
      * 
      */
-    return k*(sin(8*M_PI*r.x/L) + sin(8*M_PI*r.y/L));
+    return k*(sin(8*M_PI*_r.x/L) + sin(8*M_PI*_r.y/L));
 }
 
 point ABP_2d::compute_force(){
@@ -92,7 +92,7 @@ point ABP_2d::compute_force(){
 
 }
 
-void ABP_2d::position_step(double noise_x, double noise_y){
+void ABP_2d::position_step(double &noise_x, double &noise_y){
     /**
      * @brief Copmute next position and append to vector positions
      * To be called after __init__()
@@ -113,7 +113,7 @@ void ABP_2d::position_step(double noise_x, double noise_y){
     positions.push_back(next_position);
 }
 
-void ABP_2d::theta_step(double noise_theta){   
+void ABP_2d::theta_step(double &noise_theta){   
     /**
      * @brief Compute next orientation
      * 
@@ -124,7 +124,7 @@ void ABP_2d::theta_step(double noise_theta){
 
 
 
-void ABP_2d::dynamics(unsigned N_steps){
+void ABP_2d::dynamics(unsigned &N_steps){
     /**
      * @brief Perform stochastic dynamics
      * 
@@ -149,7 +149,7 @@ void ABP_2d::dynamics(unsigned N_steps){
     }
 }
 
-void ABP_2d::print_dynamics(string filename){
+void ABP_2d::print_dynamics(string &filename){
     ofstream out(filename);
     for(unsigned i=0; i<positions.size(); ++i){
         out<<positions[i].x<<" "<<positions[i].y<<" "<<thetas[i]<<endl;
@@ -157,14 +157,14 @@ void ABP_2d::print_dynamics(string filename){
     out.close();
 }
 
-bool ABP_2d::is_near_minimum(point r){
+bool ABP_2d::is_near_minimum(point &_r){
     /**
      * @brief Check if the position is inside a minimum region
      * Defined to have potential energy <=-1.5
      * 
      */
     bool is_near = false;
-    double u = potential(r);
+    double u = potential(_r);
     if (u<-1.5){
         is_near = true;
     }
@@ -173,13 +173,13 @@ bool ABP_2d::is_near_minimum(point r){
 }
 
 
-void ABP_2d::search_target(region target, unsigned max_num_steps){
+unsigned ABP_2d::search_target(region &target, unsigned &max_num_steps, default_random_engine &engine){
     /**
      * @brief Run dynamics until the particle hit (is inside) the target region
      * 
+     * @return Number of steps taken to hit the target if they are less than max_num_steps, max_num_steps otherwise
      */
     // Random generator
-    default_random_engine engine;
     normal_distribution<double> normal_x;
     normal_distribution<double> normal_y;
     normal_distribution<double> normal_theta;
@@ -189,8 +189,6 @@ void ABP_2d::search_target(region target, unsigned max_num_steps){
 
     // Step counter
     unsigned step = 0;
-
-    cout<<"Starting search target..."<<endl;
 
     while (is_inside==false && step < max_num_steps){
         // Generate white gaussian noise
@@ -207,14 +205,56 @@ void ABP_2d::search_target(region target, unsigned max_num_steps){
         ++step;
     }
 
-    if(step==max_num_steps){
-        cout<<"Target search finished before finding the target -> increase maximum mnumber of steps."<<endl;
-    }
-    else{
-        cout<<"Target found after "<<step<<" steps"<<endl;
-    }
-    
+    return step;
 }
+
+
+double mean_search_steps(region &reactant, region &target, unsigned &num_particles, unsigned &max_num_steps, double &_dt, double &_v, double &_D_r, double &_D_theta, double &_k, double &_L, double & _mu, double &_w){
+    /**
+     * @brief Compute the average number of steps for particle to jump from the reactant region to target region
+     * where the search is done for a max_num_steps
+     * 
+     * @param reactant is the starting regione, where the starting point is drawn uniformly
+     * @param target is the target region for search
+     * @param num_particles is the total number of trial particles
+     * @param max_num_steps is the maximum number of search steps for each particle
+     * 
+     * @return the average number of steps taken by the particle to hit the target starting from rectant region
+     * 
+     */
+
+    // Random generator 
+    default_random_engine engine;
+    uniform_real_distribution<double> uniform_r(0.0, sqrt(reactant.radius));
+    uniform_real_distribution<double> uniform_theta(0.0, 2*M_PI);
+
+    // Generate starting point inside reactant and starting angle 
+    point start_point;
+    double _r = uniform_r(engine);
+    double _theta = uniform_theta(engine);
+    double start_theta = uniform_theta(engine);
+    start_point.x = reactant.x + _r*cos(_theta);
+    start_point.y = reactant.y + _r*sin(_theta);
+    
+    // Mean number of steps
+    double mean_num_steps = 0.0;
+    unsigned print_step = num_particles/10;
+
+    for (unsigned i=0; i<num_particles; ++i){
+        ABP_2d particle(start_point, start_theta, _dt, _v, _D_r, _D_theta, _k, _L, _mu,_w);
+        unsigned num_steps = particle.search_target(target, max_num_steps, engine);
+        mean_num_steps += (double) num_steps;
+
+        // Print dynamics
+        if( i%print_step ==0 ){
+            string filename = "dynamics"+to_string(i)+".txt";
+            particle.print_dynamics(filename);      
+        }
+        
+    }
+    return mean_num_steps/((double) num_particles);
+}
+
 
 
 

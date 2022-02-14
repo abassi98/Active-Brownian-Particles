@@ -4,7 +4,7 @@ import math
 
 # Load files
 par = open("parameters.txt")
-dynamics = np.loadtxt("dynamics.txt")
+dynamics = np.loadtxt("dynamics20.txt")
 
 # Create parameter dictionsry
 par_dict = {}

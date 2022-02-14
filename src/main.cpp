@@ -4,8 +4,11 @@ using namespace std;
 
 int main()
 {
-    // Inizialize random seed to have repricability
-    srand(0);
+    // Inizialize random generator with seed to have repricability
+    default_random_engine engine;
+    engine.seed(0);
+
+
 
     // Set parameters
     //unsigned _N_steps = 4000;
@@ -15,36 +18,33 @@ int main()
     double _D_theta = 1.0;
     double _k = 1.0;
     double _L = 1.0;
-    double _mu = 2;
+    double _mu = 0.5;
     double _w = 0.0;
+    
 
-    // Set initial position to stay in a minimum and initial direction
-    point _r;
-    double _theta = 0.0;
-    _r.x = 3./16.*_L;
-    _r.y = 3./16.*_L;
+    // Define reactant region
+    region reactant;
+    reactant.x = 3./16.*_L;
+    reactant.y =  3./16.*_L;
+    reactant.radius = _L/16.;
 
-    // Initialize test active brownian particle
-    ABP_2d test(_r, _theta, _dt, _v, _D_r, _D_theta, _k, _L, _mu,_w);
-
-
-    //Sear target dynamics
+    //Define target region
     region target;
-    target.x = _r.x + test.L/4;
-    target.y = _r.y + test.L/4;
-    target.radius = test.L/16.;
-    unsigned max_num_steps = 10000;
+    target.x = reactant.x ;
+    target.y = reactant.y + _L/4.;
+    target.radius = _L/16.;
 
-    // Target search of ten particles
-    unsigned num_particles = 10;
-    for (unsigned i=0; i<num_particles; ++i){
-        ABP_2d particle(_r, _theta, _dt, _v, _D_r, _D_theta, _k, _L, _mu,_w);
-        particle.search_target(target, max_num_steps);
-        // Print on file 
-        particle.print_dynamics("dynamics.txt");
-    }
-   
 
+    // Maximum number of steps to stop and number of particles 
+    unsigned max_num_steps = 100000;
+    unsigned num_particles = 100;
+    
+    // Dynamics
+    double mean_number_steps;
+    mean_number_steps = mean_search_steps(reactant, target, num_particles, max_num_steps, _dt, _v, _D_r, _D_theta, _k, _L, _mu, _w);
+
+    cout<<"Mean number of steps: "<<mean_number_steps<<endl;
+    
     return  0;
 }
 

@@ -19,7 +19,7 @@ using namespace std;
     double x = 0;
     double y = 0;
 
-    double distance(point);
+    double distance(point&);
 };
 
 class region : public point {
@@ -27,7 +27,7 @@ class region : public point {
     double radius = 1;
 };
 
-bool is_inside_target(point, region);
+bool is_inside_target(point&, region&);
 
 class ABP_2d
 {
@@ -47,27 +47,27 @@ class ABP_2d
     double mu;
     double w;
 
-    ABP_2d(point, double, double, double, double, double, double, double, double, double );
+    ABP_2d(point&, double&, double&, double&, double&, double&, double&, double&, double&, double& );
     ~ABP_2d();
 
-    double potential(point);
+    double potential(point&);
     point compute_force();
-    void position_step(double, double);
-    void theta_step(double);
+    void position_step(double&, double&);
+    void theta_step(double&);
    
-    void dynamics(unsigned);
+    void dynamics(unsigned&);
 
     
-    void print_dynamics(string);
+    void print_dynamics(string&);
 
    
-    bool is_near_minimum(point);
+    bool is_near_minimum(point&);
 
-    void search_target(region, unsigned);
-
-
+    unsigned search_target(region&, unsigned&, default_random_engine&);
 
 };
+
+double mean_search_steps(region&, region&, unsigned&, unsigned&, double&, double&, double&, double&, double&, double&, double&, double& );
 
 
 
