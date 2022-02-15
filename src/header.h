@@ -13,21 +13,24 @@
 
 using namespace std;
 
+
  class point {
     public:
 
     double x = 0;
     double y = 0;
 
-    double distance(point&);
+    double distance_to_point(point&);
 };
 
-class region : public point {
+class region : public point  {
     public:
     double radius = 1;
 };
 
-bool is_inside_target(point&, region&);
+
+point getVector(const point&, const point &);
+
 
 class ABP_2d
 {
@@ -47,15 +50,28 @@ class ABP_2d
     double mu;
     double w;
 
-    ABP_2d(point&, double&, double&, double&, double&, double&, double&, double&, double&, double& );
+    // Reactant region
+    region reactant;
+
+    // Cross parameters
+    int quadrant_x;
+    int quadrant_y;
+    
+
+    // Random generator
+    default_random_engine engine;
+
+    ABP_2d(region&, double&, double&, double&, double&, double&, double&, double&, double& );
     ~ABP_2d();
 
-    double potential(point&);
+    void apply_pbc_to_point(point&);
+    void apply_pbc();
+    double pbc_distance(const point&, const point&);
+
+    double potential(const point&);
     point compute_force();
     void position_step(double&, double&);
     void theta_step(double&);
-   
-    void dynamics(unsigned&);
 
     
     void print_dynamics(string&);
@@ -63,11 +79,11 @@ class ABP_2d
    
     bool is_near_minimum(point&);
 
-    unsigned search_target(region&, unsigned&, default_random_engine&);
+    bool is_inside_region(const region&);
+    void print_bool_dynamics(const region&, unsigned&, string&);
 
 };
 
-double mean_search_steps(region&, region&, unsigned&, unsigned&, double&, double&, double&, double&, double&, double&, double&, double& );
 
 
 

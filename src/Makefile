@@ -11,5 +11,5 @@ main: $(SOURCE)
 	$(FC) $(FCLAGS) -o $@ $(SOURCE) 
 
 clean:
-	-rm -f *.txt main
+	-rm -f *.txt main dynamics/*.txt
 
