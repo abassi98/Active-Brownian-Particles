@@ -6,7 +6,39 @@ double point::distance_to_point(point &_r){
     return sqrt((x-_r.x)*(x-_r.x) + (y-_r.y)*(y-_r.y));
 }
 
+void point::get_quadrant(double &L){
+    /**
+     * @brief Compute quadrant of a point and save it
+     * 
+     */
+    // Compute semiquadrants
+    int semiquad_x =  x/L*8;
+    int semiquad_y = y/L*8.;
+    if(x>0.0){
+        quadrant_x = (semiquad_x+1)/2;
+    }
+    if(x<0.0){
+        quadrant_x = (semiquad_x-1)/2;
+    }
 
+    if(y>0.0){
+        quadrant_y = (semiquad_y+1)/2;
+    }
+    if(y<0.0){
+        quadrant_y = (semiquad_y-1)/2;
+    }
+    
+}
+void point::translate_to_origin(double &_L){
+    /**
+     * @brief Trnsalte point coordinates to lie inside (0,0) quadrant
+     * 
+     */
+    // If quadrant = 0, do nothing
+    x -= quadrant_x*_L/4.;
+    y -= quadrant_y*_L/4.;
+    
+}
 
 point getVector(const point&A, const point& B){
   // Get the vector  pointing from B to A
@@ -38,17 +70,23 @@ ABP_2d::ABP_2d(region &_reactant, double &_dt, double &_v, double &_D_r, double 
     // Set reactant region
     reactant = _reactant;
 
+    // Open debug
+    debug.open("debug.txt");
+
     // Generate starting point inside reactant and starting angle 
     point start_point;
-    double _r = _reactant.radius*sqrt(uniform_r(engine));
-    double _theta = uniform_theta(engine);
     double start_theta = uniform_theta(engine);
-    start_point.x = _reactant.x + _r*cos(_theta);
-    start_point.y = _reactant.y + _r*sin(_theta);
-
+    start_point.x = _reactant.x - 0.02;
+    start_point.y = _reactant.y;
+    apply_pbc_to_point(start_point); // pbc
+    start_point.get_quadrant(_L);
+   
+    
     // Add the first element
     positions.push_back(start_point);
     thetas.push_back(start_theta);
+
+    
 
     // Set parameters
     dt = _dt;
@@ -60,11 +98,6 @@ ABP_2d::ABP_2d(region &_reactant, double &_dt, double &_v, double &_D_r, double 
     mu = _mu;
     w = _w;
     
-    // Cross quadrant parameters
-    quadrant_x = 0;
-    quadrant_y = 0;
-    
-
     // Print parameters on a file for plotting
     ofstream par("parameters.txt");
     par<<"dt"<<" "<<dt<<endl;
@@ -77,6 +110,9 @@ ABP_2d::ABP_2d(region &_reactant, double &_dt, double &_v, double &_D_r, double 
     par<<"w"<<" "<<w<<endl;
     par.close();
 }
+
+
+
 
 ABP_2d::~ABP_2d(){
     /**
@@ -99,19 +135,24 @@ void ABP_2d::apply_pbc(){
      * @brief Apply periodic boundary conditions and update cross parameters
      * 
      */
-    point &A = positions.back();
-    if(A.x > L/8) {
-        A.x -= L/4;
-        ++quadrant_x;}
-    if(A.x < -L/8) {
-        A.x += L/4; 
-        --quadrant_x;}
-    if(A.y > L/8) {
-        A.y -= L/4;
-        ++quadrant_y;}
-    if(A.y < -L/8) {
-        A.y += L/4;
-        --quadrant_y;}
+    point &last = positions.back();
+    if(positions.size()>1){
+        point semi_last = positions[positions.size() - 2];
+        last.quadrant_x = semi_last.quadrant_x;
+        last.quadrant_y = semi_last.quadrant_y;
+        if(last.x > L/8.) {
+            last.x -= L/4.;
+            ++last.quadrant_x;}
+        if(last.x < -L/8.) {
+            last.x += L/4.; 
+            --last.quadrant_x;}
+        if(last.y > L/8.) {
+            last.y -= L/4.;
+            ++last.quadrant_y;}
+        if(last.y < -L/8.){
+            last.y += L/4.;
+            --last.quadrant_y;}
+    }
 }
 
 double ABP_2d::pbc_distance(const point&A, const point &B){
@@ -186,7 +227,7 @@ void ABP_2d::theta_step(double &noise_theta){
 void ABP_2d::print_dynamics(string &filename){
     ofstream out(filename);
     for(unsigned i=0; i<positions.size(); ++i){
-        out<<positions[i].x<<" "<<positions[i].y<<" "<<thetas[i]<<endl;
+        out<<positions[i].x<<" "<<positions[i].y<<" "<<positions[i].quadrant_x<<" "<<positions[i].quadrant_y<<" "<<thetas[i]<<endl;
     }
     out.close();
 }
@@ -207,30 +248,18 @@ bool ABP_2d::is_near_minimum(point &_r){
 }
 
 
+
 bool ABP_2d::is_inside_region(const region &target){
     /**
      * @brief Check if the last point of the trajectories lies inside a region with pbc
      */
     point &A = positions.back();
     bool is_inside = false;
-    region reg = target;
     
-    // Get quadrant of the region target
-    int semiquad_tar_x = floor(reg.x/L*8.);
-    int quad_tar_x = floor(semiquad_tar_x/2.);
-    int semiquad_tar_y = floor(reg.y/L*8.);
-    int quad_tar_y = floor(semiquad_tar_y/2.);
 
-    //cout<<reg.x<<" "<<reg.y<<" "<<reg.radius<<endl;
-    //cout<<semiquad_tar_x<<" "<<semiquad_tar_y<<endl;
-    //cout<<quad_tar_x<<" "<<quad_tar_y<<endl;
-
-    if(quad_tar_x == quadrant_x && quad_tar_y ==  quadrant_y){
-        // Rescale target to (0,0) quadrant
-        reg.x -= semiquad_tar_x*L/8.;
-        reg.y -=  semiquad_tar_y*L/8.;
-        double _r = pbc_distance(A, reg);
-        if(_r<reg.radius){
+    if(A.quadrant_x == target.quadrant_x &&  A.quadrant_y == target.quadrant_y){
+        double _r = pbc_distance(A, target);
+        if(_r<target.radius){
             is_inside = true;
         }
     }
@@ -280,17 +309,20 @@ void ABP_2d::print_bool_dynamics(const region &target, unsigned &max_num_steps, 
         else if(is_inside_reactant==false && is_inside_target==true){
             out<<2<<endl;
         }
+        
         else{
             cout<<"Error: particle cannot be inside target and reactant at the same time"<<endl;
-            break;
+            abort();
         }
 
         // Dynamics steps
         position_step(noise_x, noise_y); // Update the position, appending the new posistion to the queu of the positions vector
         theta_step(noise_theta); // Update the angle theta, appending the new angle to the queu of the positions vector
+    
 
         // Apply periodic boundary conditions
         apply_pbc();
+        
     }
 }
 

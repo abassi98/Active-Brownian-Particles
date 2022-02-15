@@ -13,13 +13,19 @@
 
 using namespace std;
 
-
- class point {
+class quadrant {
     public:
+    int quadrant_x=0;
+    int quadrant_y=0;
+};
 
+class point : public quadrant{
+    public:
     double x = 0;
     double y = 0;
 
+    void get_quadrant(double&);
+    void translate_to_origin(double&);
     double distance_to_point(point&);
 };
 
@@ -40,6 +46,9 @@ class ABP_2d
     vector<point> positions;
     vector<double> thetas;
 
+    // Debug file 
+    ofstream debug;
+
     // Coefficients 
     double dt;
     double v;
@@ -53,17 +62,13 @@ class ABP_2d
     // Reactant region
     region reactant;
 
-    // Cross parameters
-    int quadrant_x;
-    int quadrant_y;
-    
-
     // Random generator
     default_random_engine engine;
 
     ABP_2d(region&, double&, double&, double&, double&, double&, double&, double&, double& );
     ~ABP_2d();
 
+   
     void apply_pbc_to_point(point&);
     void apply_pbc();
     double pbc_distance(const point&, const point&);
