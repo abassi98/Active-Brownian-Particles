@@ -38,7 +38,8 @@ ABP_2d::ABP_2d(region &_reactant, double &_dt, double &_v, double &_D_r, double 
     reactant = _reactant;
 
     // Open debug
-    debug.open("debug.txt");
+    debug_file = "debug.txt";
+    ofstream debug(debug_file);
 
     // Generate starting point inside reactant and starting angle 
     point start_point;

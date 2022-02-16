@@ -39,7 +39,7 @@ class ABP_2d
     vector<double> thetas;
 
     // Debug file 
-    ofstream debug;
+    string debug_file;
 
     // Coefficients 
     double dt;
