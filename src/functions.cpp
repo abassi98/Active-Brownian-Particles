@@ -261,6 +261,9 @@ bool ABP_2d::is_inside_region(const region &target){
         double _r = pbc_distance(A, target);
         if(_r<target.radius){
             is_inside = true;
+            // Translate quadrant back to origin
+            A.quadrant_x -= target.quadrant_x;
+            A.quadrant_y -= target.quadrant_y;
         }
     }
     return is_inside;

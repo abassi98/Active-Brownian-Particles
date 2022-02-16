@@ -31,7 +31,7 @@ int main()
     
     //Define target region
     region target;
-    int m = 1;
+    int m = -1;
     int n = 0;
     target.x = m*_L/4;
     target.y = n*_L/4.;
@@ -54,7 +54,7 @@ int main()
 
 
     // Dynamics
-    unsigned num_steps = 1000000;
+    unsigned num_steps = 10000000;
     string dyn = "dynamics.txt";
     string bool_dyn =  "bool_dynamics.txt";
 
