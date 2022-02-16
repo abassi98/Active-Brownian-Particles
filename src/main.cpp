@@ -30,31 +30,11 @@ int main()
     reactant.radius = _L/16.;
     
     //Define target region
-    region target;
-    int m = -1;
-    int n = 0;
-    target.x = m*_L/4;
-    target.y = n*_L/4.;
-    target.radius = _L/16.;
-    
-
-    // Check if they overlap
-    if(target.distance_to_point(reactant)<target.radius+reactant.radius){
-        cout<<"Error: target and reactant overalp"<<endl;
-        abort();
-    }
-    
-    // Get quadrants and traslate coordinates
-    reactant.get_quadrant(_L); 
-    reactant.translate_to_origin(_L);
-    target.get_quadrant(_L);
-    target.translate_to_origin(_L);
-
-
+    region target = reactant;
 
 
     // Dynamics
-    unsigned num_steps = 10000000;
+    unsigned num_steps = 1000000;
     string dyn = "dynamics.txt";
     string bool_dyn =  "bool_dynamics.txt";
 

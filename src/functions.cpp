@@ -6,39 +6,6 @@ double point::distance_to_point(point &_r){
     return sqrt((x-_r.x)*(x-_r.x) + (y-_r.y)*(y-_r.y));
 }
 
-void point::get_quadrant(double &L){
-    /**
-     * @brief Compute quadrant of a point and save it
-     * 
-     */
-    // Compute semiquadrants
-    int semiquad_x =  x/L*8;
-    int semiquad_y = y/L*8.;
-    if(x>0.0){
-        quadrant_x = (semiquad_x+1)/2;
-    }
-    if(x<0.0){
-        quadrant_x = (semiquad_x-1)/2;
-    }
-
-    if(y>0.0){
-        quadrant_y = (semiquad_y+1)/2;
-    }
-    if(y<0.0){
-        quadrant_y = (semiquad_y-1)/2;
-    }
-    
-}
-void point::translate_to_origin(double &_L){
-    /**
-     * @brief Trnsalte point coordinates to lie inside (0,0) quadrant
-     * 
-     */
-    // If quadrant = 0, do nothing
-    x -= quadrant_x*_L/4.;
-    y -= quadrant_y*_L/4.;
-    
-}
 
 point getVector(const point&A, const point& B){
   // Get the vector  pointing from B to A
@@ -79,7 +46,7 @@ ABP_2d::ABP_2d(region &_reactant, double &_dt, double &_v, double &_D_r, double 
     start_point.x = _reactant.x - 0.02;
     start_point.y = _reactant.y;
     apply_pbc_to_point(start_point); // pbc
-    start_point.get_quadrant(_L);
+    
    
     
     // Add the first element
@@ -136,23 +103,14 @@ void ABP_2d::apply_pbc(){
      * 
      */
     point &last = positions.back();
-    if(positions.size()>1){
-        point semi_last = positions[positions.size() - 2];
-        last.quadrant_x = semi_last.quadrant_x;
-        last.quadrant_y = semi_last.quadrant_y;
-        if(last.x > L/8.) {
-            last.x -= L/4.;
-            ++last.quadrant_x;}
-        if(last.x < -L/8.) {
-            last.x += L/4.; 
-            --last.quadrant_x;}
-        if(last.y > L/8.) {
-            last.y -= L/4.;
-            ++last.quadrant_y;}
-        if(last.y < -L/8.){
-            last.y += L/4.;
-            --last.quadrant_y;}
-    }
+    if(last.x > L/8.) {
+        last.x -= L/4.;}
+    if(last.x < -L/8.) {
+        last.x += L/4.;}
+    if(last.y > L/8.) {
+        last.y -= L/4.;}
+    if(last.y < -L/8.){
+        last.y += L/4.;}
 }
 
 double ABP_2d::pbc_distance(const point&A, const point &B){
@@ -227,7 +185,7 @@ void ABP_2d::theta_step(double &noise_theta){
 void ABP_2d::print_dynamics(string &filename){
     ofstream out(filename);
     for(unsigned i=0; i<positions.size(); ++i){
-        out<<positions[i].x<<" "<<positions[i].y<<" "<<positions[i].quadrant_x<<" "<<positions[i].quadrant_y<<" "<<thetas[i]<<endl;
+        out<<positions[i].x<<" "<<positions[i].y<<" "<<thetas[i]<<endl;
     }
     out.close();
 }
@@ -255,16 +213,10 @@ bool ABP_2d::is_inside_region(const region &target){
      */
     point &A = positions.back();
     bool is_inside = false;
-    
 
-    if(A.quadrant_x == target.quadrant_x &&  A.quadrant_y == target.quadrant_y){
-        double _r = pbc_distance(A, target);
-        if(_r<target.radius){
-            is_inside = true;
-            // Translate quadrant back to origin
-            A.quadrant_x -= target.quadrant_x;
-            A.quadrant_y -= target.quadrant_y;
-        }
+    double _r = pbc_distance(A, target);
+    if(_r<target.radius){
+        is_inside = true;
     }
     return is_inside;
 }
@@ -303,20 +255,8 @@ void ABP_2d::print_bool_dynamics(const region &target, unsigned &max_num_steps, 
         double noise_y = normal_y(engine);
         double noise_theta = normal_theta(engine);
 
-        if (is_inside_reactant==true && is_inside_target==false){
-            out<<0<<endl;
-        }
-        else if(is_inside_reactant==false && is_inside_target==false){
-            out<<1<<endl;
-        }
-        else if(is_inside_reactant==false && is_inside_target==true){
-            out<<2<<endl;
-        }
-        
-        else{
-            cout<<"Error: particle cannot be inside target and reactant at the same time"<<endl;
-            abort();
-        }
+        // Print on file
+        out<<is_inside_reactant<<" "<<is_inside_target<<endl;
 
         // Dynamics steps
         position_step(noise_x, noise_y); // Update the position, appending the new posistion to the queu of the positions vector
@@ -327,6 +267,7 @@ void ABP_2d::print_bool_dynamics(const region &target, unsigned &max_num_steps, 
         apply_pbc();
         
     }
+    out.close();
 }
 
 

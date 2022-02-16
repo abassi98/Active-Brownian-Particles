@@ -13,19 +13,11 @@
 
 using namespace std;
 
-class quadrant {
-    public:
-    int quadrant_x=0;
-    int quadrant_y=0;
-};
-
-class point : public quadrant{
+class point{
     public:
     double x = 0;
     double y = 0;
 
-    void get_quadrant(double&);
-    void translate_to_origin(double&);
     double distance_to_point(point&);
 };
 
