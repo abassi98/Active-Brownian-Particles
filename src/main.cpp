@@ -9,18 +9,28 @@ int main()
     default_random_engine engine;
     engine.seed(0);
 
+    cout<<"Insert Peclet number"<<endl;
+    double pe;
+    cin>>pe;
+
+    cout<<"Insert second parameter"<<endl;
+    double l_star;
+    cin>>l_star;
 
 
-    // Set parameters
+    // Set fix constants
     double _dt = 0.0001;
-    double _v = 0.0;
     double _D_r = 1.0;
-    double _D_theta = 0.0;
     double _k = 1.0;
     double _L = 1.0;
-    double _mu = 2.0; 
+    double _mu = 1.0; 
     double _w = 0.; 
-    
+
+    // Set other in function of dimensionless numbers
+    double v_max = 8*M_PI*_k*_mu/_L;
+    double _v = pe*v_max;
+    double _D_theta = pe*v_max*v_max/_D_r/l_star;  
+
     
 
     // Define reactant region
