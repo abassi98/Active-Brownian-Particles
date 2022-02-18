@@ -30,6 +30,7 @@ int main()
     double v_max = 8*M_PI*_k*_mu/_L;
     double _v = pe*v_max;
     double _D_theta = pe*v_max*v_max/_D_r/l_star;  
+    _D_theta = 0.0;
 
     
 
@@ -45,13 +46,10 @@ int main()
 
     // Dynamics
     unsigned num_steps = 1000000;
-    string dyn = "dynamics.txt";
-    string bool_dyn =  "bool_dynamics.txt";
-
     ABP_2d test(reactant, _dt,_v,_D_r,_D_theta,_k,_L,_mu,_w);
     test.thetas[0] = 0.0;
-    test.print_bool_dynamics(target, num_steps,bool_dyn);
-    test.print_dynamics(dyn);
+    test.dynamics(target, num_steps);
+
     //cout<<"Initial theta: "<<test.thetas[0]*180/M_PI<<endl;
     
     

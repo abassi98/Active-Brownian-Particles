@@ -2,14 +2,29 @@
 
 using namespace std;
 
-double point::distance_to_point(point &_r){
+point::point(){
+    x = 0.0;
+    y = 0.0;
+}
+point::point(double _x, double _y){
+    x = _x;
+    y = _y;
+}
+
+double point::distance_to_point(const point &_r){
     return sqrt((x-_r.x)*(x-_r.x) + (y-_r.y)*(y-_r.y));
 }
 
+region::region() : point() {
+    radius = 0;
+}
+region::region(double _x, double _y, double _radius) : point(_x,_y) {
+    radius = _radius;
+}
 
 point getVector(const point&A, const point& B){
   // Get the vector  pointing from B to A
-  point C;
+  point C(0.0,0.0);
   C.x = A.x - B.x;
   C.y = A.y - B.y;
   return C;
@@ -33,19 +48,16 @@ ABP_2d::ABP_2d(region &_reactant, double &_dt, double &_v, double &_D_r, double 
     // If not empty clear the vectors
     positions.clear();
     thetas.clear();
+    bool_reactant.clear();
+    bool_target.clear();
 
     // Set reactant region
     reactant = _reactant;
 
-    // Open debug
-    debug_file = "debug.txt";
-    ofstream debug(debug_file);
 
-    // Generate starting point inside reactant and starting angle 
-    point start_point;
+    // Generate starting point at the center of reactant
+    point start_point(reactant.x,reactant.y);
     double start_theta = uniform_theta(engine);
-    start_point.x = _reactant.x - 0.02;
-    start_point.y = _reactant.y;
     apply_pbc_to_point(start_point); // pbc
     
    
@@ -141,7 +153,7 @@ point ABP_2d::compute_force(){
      * To called after there is at least one element in positions
      * 
      */
-    point force;
+    point force(0.0,0.0);
 
     // Compute force
     force.x = - 8.0*M_PI/L*k*cos(8*M_PI*(positions.back().x + 3./16.*L)/L);
@@ -158,8 +170,8 @@ void ABP_2d::position_step(double &noise_x, double &noise_y){
      * 
      */
 
-    point next_position;
-    point force;
+    point next_position(0.0,0.0);
+    point force(0.0,0.0);
 
     // Compute force acting on last position
     force = compute_force();
@@ -182,14 +194,6 @@ void ABP_2d::theta_step(double &noise_theta){
 }
 
 
-
-void ABP_2d::print_dynamics(string &filename){
-    ofstream out(filename);
-    for(unsigned i=0; i<positions.size(); ++i){
-        out<<positions[i].x<<" "<<positions[i].y<<" "<<thetas[i]<<endl;
-    }
-    out.close();
-}
 
 bool ABP_2d::is_near_minimum(point &_r){
     /**
@@ -223,7 +227,7 @@ bool ABP_2d::is_inside_region(const region &target){
 }
 
 
-void ABP_2d::print_bool_dynamics(const region &target, unsigned &max_num_steps, string &filename){
+void ABP_2d::dynamics(const region &target, unsigned &max_num_steps){
     /**
      * @brief Run dynamics for many steps and compute statistics
      * 
@@ -241,9 +245,6 @@ void ABP_2d::print_bool_dynamics(const region &target, unsigned &max_num_steps, 
     normal_distribution<double> normal_y;
     normal_distribution<double> normal_theta;
 
-    // Output
-    ofstream out(filename);
-
     // Run a super dynamics of max_num_steps steps
     for (unsigned step=0; step< max_num_steps; ++step){
 
@@ -251,13 +252,16 @@ void ABP_2d::print_bool_dynamics(const region &target, unsigned &max_num_steps, 
         bool is_inside_reactant = is_inside_region(reactant);
         bool is_inside_target = is_inside_region(target);
 
+        // Append
+        bool_reactant.push_back(is_inside_reactant);
+        bool_target.push_back(is_inside_target);
+
         // Generate white gaussian noise
         double noise_x = normal_x(engine);
         double noise_y = normal_y(engine);
         double noise_theta = normal_theta(engine);
 
-        // Print on file
-        out<<is_inside_reactant<<" "<<is_inside_target<<endl;
+       
 
         // Dynamics steps
         position_step(noise_x, noise_y); // Update the position, appending the new posistion to the queu of the positions vector
@@ -268,7 +272,21 @@ void ABP_2d::print_bool_dynamics(const region &target, unsigned &max_num_steps, 
         apply_pbc();
         
     }
-    out.close();
 }
 
 
+void ABP_2d::print_dynamics(string &filename){
+    ofstream out(filename);
+    for(unsigned i=0; i<positions.size(); ++i){
+        out<<positions[i].x<<" "<<positions[i].y<<" "<<thetas[i]<<endl;
+    }
+    out.close();
+}
+
+void ABP_2d::print_bool_dynamics(string &filename){
+    ofstream out(filename);
+    for(unsigned i=0; i<positions.size(); ++i){
+        out<<bool_reactant[i]<<" "<<bool_target[i]<<endl;
+    }
+    out.close();
+}
