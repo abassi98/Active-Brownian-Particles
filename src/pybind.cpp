@@ -7,7 +7,7 @@
 namespace py = pybind11;
 
 
-PYBIND11_MODULE(abp, m) {
+PYBIND11_MODULE(example, m) {
     m.doc() = "pybind11 of Active Brownian Particle dynamics"; 
 
     // Class point
