@@ -39,12 +39,14 @@ class ABP_2d
     public:
     
         // Dynamical variables
-        vector<point> positions;
-        vector<double> thetas;
+        vector<double> position_x;
+        vector<double> position_y;
+        vector<double> theta;
         vector<bool> bool_reactant;
         vector<bool> bool_target;
 
         // Coefficients 
+        unsigned num_steps;
         double dt;
         double v;
         double D_r;
@@ -56,26 +58,25 @@ class ABP_2d
 
         // Reactant region
         region reactant;
+        region target;
 
         // Random generator
         default_random_engine engine;
 
-        ABP_2d(region&, double&, double&, double&, double&, double&, double&, double&, double& );
-        ~ABP_2d();
+        ABP_2d(const region&, const region&, unsigned&, double&, double&, double&, double&, double&, double&, double&, double& );
 
     
-        void apply_pbc_to_point(point&);
-        void apply_pbc();
+        void apply_pbc(point&);
         double pbc_distance(const point&, const point&);
 
         double potential(const point&);
-        point compute_force();
-        void position_step(double&, double&);
-        void theta_step(double&);
+        point compute_force(const point&);
+        void position_step(point&, const double &, const double&, const double&);
+        void theta_step(double&, double&);
         bool is_near_minimum(point&);
 
-        bool is_inside_region(const region&);
-        void dynamics(const region&, unsigned&);
+        bool is_inside_region(const point&, const region&);
+        void dynamics();
         void print_dynamics(string&);
         void print_bool_dynamics(string&);
 

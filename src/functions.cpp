@@ -31,7 +31,7 @@ point getVector(const point&A, const point& B){
 }
 
 
-ABP_2d::ABP_2d(region &_reactant, double &_dt, double &_v, double &_D_r, double &_D_theta, double &_k, double &_L, double & _mu, double &_w){
+ABP_2d::ABP_2d(const region &_reactant,  const region &_target, unsigned &_num_steps, double &_dt, double &_v, double &_D_r, double &_D_theta, double &_k, double &_L, double & _mu, double &_w){
     /**
      * @brief Constructor: initialize the position and the orientation of the particle
      * make sure to call it before any dynamics step
@@ -45,28 +45,31 @@ ABP_2d::ABP_2d(region &_reactant, double &_dt, double &_v, double &_D_r, double 
     uniform_real_distribution<double> uniform_r(0.0, 1.0);
     uniform_real_distribution<double> uniform_theta(0.0, 2*M_PI);
 
-    // If not empty clear the vectors
-    positions.clear();
-    thetas.clear();
+    // Allocate memory
+    num_steps = _num_steps;
+    position_x.clear();
+    position_y.clear();
+    theta.clear();
     bool_reactant.clear();
     bool_target.clear();
 
     // Set reactant region
     reactant = _reactant;
+    target = _target;
 
 
     // Generate starting point at the center of reactant
     point start_point(reactant.x,reactant.y);
     double start_theta = uniform_theta(engine);
-    apply_pbc_to_point(start_point); // pbc
+    apply_pbc(start_point); // pbc
     
-   
-    
-    // Add the first element
-    positions.push_back(start_point);
-    thetas.push_back(start_theta);
 
-    
+    // Set initial conditions
+    position_x.push_back(start_point.x);
+    position_y.push_back(start_point.y);
+    theta.push_back(start_theta);
+    bool_reactant.push_back(is_inside_region(start_point, reactant));
+    bool_target.push_back(is_inside_region(start_point, target));
 
     // Set parameters
     dt = _dt;
@@ -78,53 +81,18 @@ ABP_2d::ABP_2d(region &_reactant, double &_dt, double &_v, double &_D_r, double 
     mu = _mu;
     w = _w;
     
-    // Print parameters on a file for plotting
-    ofstream par("parameters.txt");
-    par<<"dt"<<" "<<dt<<endl;
-    par<<"v"<<" "<<v<<endl;
-    par<<"D_r"<<" "<<D_r<<endl;
-    par<<"D_theta"<<" "<<D_theta<<endl;
-    par<<"k"<<" "<<k<<endl;
-    par<<"L"<<" "<<L<<endl;
-    par<<"mu"<<" "<<mu<<endl;
-    par<<"w"<<" "<<w<<endl;
-    par.close();
 }
 
 
 
-
-ABP_2d::~ABP_2d(){
-    /**
-     * @brief Destuctor, clear position and theta vectors
-     * 
-     */
-    positions.clear();
-    thetas.clear();
-}
-
-void ABP_2d::apply_pbc_to_point(point &A){
+void ABP_2d::apply_pbc(point &A){
     if(A.x > L/8) {A.x -= L/4;}
     if(A.x < -L/8) {A.x += L/4;}
     if(A.y > L/8) {A.y -= L/4;}
     if(A.y < -L/8) {A.y += L/4;}
 }
 
-void ABP_2d::apply_pbc(){
-    /**
-     * @brief Apply periodic boundary conditions and update cross parameters
-     * 
-     */
-    point &last = positions.back();
-    if(last.x > L/8.) {
-        last.x -= L/4.;}
-    if(last.x < -L/8.) {
-        last.x += L/4.;}
-    if(last.y > L/8.) {
-        last.y -= L/4.;}
-    if(last.y < -L/8.){
-        last.y += L/4.;}
-}
+
 
 double ABP_2d::pbc_distance(const point&A, const point &B){
     /**
@@ -132,7 +100,7 @@ double ABP_2d::pbc_distance(const point&A, const point &B){
      * 
      */
     point C = getVector(A,B);
-    apply_pbc_to_point(C);
+    apply_pbc(C);
     
     return sqrt(C.x*C.x + C.y*C.y);
 }
@@ -147,7 +115,7 @@ double ABP_2d::potential(const point &_r){
 
 
 
-point ABP_2d::compute_force(){
+point ABP_2d::compute_force(const point& position){
     /**
      * @brief Compute force acting on a particle due to potential, take its last position
      * To called after there is at least one element in positions
@@ -156,41 +124,38 @@ point ABP_2d::compute_force(){
     point force(0.0,0.0);
 
     // Compute force
-    force.x = - 8.0*M_PI/L*k*cos(8*M_PI*(positions.back().x + 3./16.*L)/L);
-    force.y = - 8.0*M_PI/L*k*cos(8*M_PI*(positions.back().y + 3./16.*L)/L);
+    force.x = - 8.0*M_PI/L*k*cos(8*M_PI*(position.x + 3./16.*L)/L);
+    force.y = - 8.0*M_PI/L*k*cos(8*M_PI*(position.y + 3./16.*L)/L);
 
     return force;
 
 }
 
-void ABP_2d::position_step(double &noise_x, double &noise_y){
+void ABP_2d::position_step(point &position, const double &theta, const double &noise_x, const double &noise_y){
     /**
-     * @brief Copmute next position and append to vector positions
+     * @brief Update position according to dynamics
      * To be called after __init__()
      * 
      */
 
-    point next_position(0.0,0.0);
-    point force(0.0,0.0);
 
     // Compute force acting on last position
-    force = compute_force();
+    point force = compute_force(position);
 
     // Compute next position
-    next_position.x = positions.back().x + v*cos(thetas.back())*dt + sqrt(2*D_r*dt)*noise_x + mu*force.x*dt;
-    next_position.y = positions.back().y + v*sin(thetas.back())*dt + sqrt(2*D_r*dt)*noise_y + mu*force.y*dt;
+    position.x +=  v*cos(theta)*dt + sqrt(2*D_r*dt)*noise_x + mu*force.x*dt;
+    position.y += v*sin(theta)*dt + sqrt(2*D_r*dt)*noise_y + mu*force.y*dt;
 
-    // Append to vector positions
-    positions.push_back(next_position);
+    // Apply periodic boundary conditinos
+    apply_pbc(position);
 }
 
-void ABP_2d::theta_step(double &noise_theta){   
+void ABP_2d::theta_step(double &theta, double &noise_theta){   
     /**
-     * @brief Compute next orientation
+     * @brief Update orientation according to dynamics
      * 
      */
-    double next_orientation = thetas.back() + w*dt + sqrt(2*D_theta*dt)*noise_theta;
-    thetas.push_back(next_orientation);
+    theta += + w*dt + sqrt(2*D_theta*dt)*noise_theta;
 }
 
 
@@ -212,11 +177,10 @@ bool ABP_2d::is_near_minimum(point &_r){
 
 
 
-bool ABP_2d::is_inside_region(const region &target){
+bool ABP_2d::is_inside_region(const point &A,  const region &target){
     /**
-     * @brief Check if the last point of the trajectories lies inside a region with pbc
+     * @brief Check if the point lies inside a region with pbc
      */
-    point &A = positions.back();
     bool is_inside = false;
 
     double _r = pbc_distance(A, target);
@@ -227,7 +191,7 @@ bool ABP_2d::is_inside_region(const region &target){
 }
 
 
-void ABP_2d::dynamics(const region &target, unsigned &max_num_steps){
+void ABP_2d::dynamics(){
     /**
      * @brief Run dynamics for many steps and compute statistics
      * 
@@ -240,52 +204,52 @@ void ABP_2d::dynamics(const region &target, unsigned &max_num_steps){
      */
     
 
+    // Dynamical variables
+    point position;
+    double theta_dyn;
+
+    // Set initial values
+    position.x = position_x.back();
+    position.y = position_y.back();
+    theta_dyn = theta.back();
+
     // Random generator
     normal_distribution<double> normal_x;
     normal_distribution<double> normal_y;
     normal_distribution<double> normal_theta;
 
     // Run a super dynamics of max_num_steps steps
-    for (unsigned step=0; step< max_num_steps; ++step){
-
-        // Update is inside reactant and target bools
-        bool is_inside_reactant = is_inside_region(reactant);
-        bool is_inside_target = is_inside_region(target);
-
-        // Append
-        bool_reactant.push_back(is_inside_reactant);
-        bool_target.push_back(is_inside_target);
-
+    for (unsigned step=0; step<num_steps; ++step){
         // Generate white gaussian noise
         double noise_x = normal_x(engine);
         double noise_y = normal_y(engine);
         double noise_theta = normal_theta(engine);
 
-       
-
         // Dynamics steps
-        position_step(noise_x, noise_y); // Update the position, appending the new posistion to the queu of the positions vector
-        theta_step(noise_theta); // Update the angle theta, appending the new angle to the queu of the positions vector
-    
+        position_step(position, theta_dyn, noise_x, noise_y); // Update the position, appending the new posistion to the queu of the positions vector
+        theta_step(theta_dyn, noise_theta); // Update the angle theta, appending the new angle to the queu of the positions vector
 
-        // Apply periodic boundary conditions
-        apply_pbc();
-        
+        // Append positions
+        position_x.push_back(position.x);
+        position_y.push_back(position.y);
+        theta.push_back(theta_dyn);
+        bool_reactant.push_back(is_inside_region(position, reactant));
+        bool_target.push_back(is_inside_region(position, target));
     }
 }
 
 
 void ABP_2d::print_dynamics(string &filename){
     ofstream out(filename);
-    for(unsigned i=0; i<positions.size(); ++i){
-        out<<positions[i].x<<" "<<positions[i].y<<" "<<thetas[i]<<endl;
+    for(unsigned i=0; i<num_steps+1; ++i){
+        out<<position_x[i]<<" "<<position_y[i]<<" "<<theta[i]<<endl;
     }
     out.close();
 }
 
 void ABP_2d::print_bool_dynamics(string &filename){
     ofstream out(filename);
-    for(unsigned i=0; i<positions.size(); ++i){
+    for(unsigned i=0; i<num_steps+1; ++i){
         out<<bool_reactant[i]<<" "<<bool_target[i]<<endl;
     }
     out.close();

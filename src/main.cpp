@@ -46,9 +46,8 @@ int main()
 
     // Dynamics
     unsigned num_steps = 1000000;
-    ABP_2d test(reactant, _dt,_v,_D_r,_D_theta,_k,_L,_mu,_w);
-    test.thetas[0] = 0.0;
-    test.dynamics(target, num_steps);
+    ABP_2d test(reactant, target, num_steps, _dt,_v,_D_r,_D_theta,_k,_L,_mu,_w);
+    test.dynamics();
 
     //cout<<"Initial theta: "<<test.thetas[0]*180/M_PI<<endl;
     

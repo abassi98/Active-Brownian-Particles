@@ -1,9 +1,11 @@
 #include "header.h"
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/stl_bind.h>
 
 
 namespace py = pybind11;
+
 
 PYBIND11_MODULE(example, m) {
     m.doc() = "pybind11 of Active Brownian Particle dynamics"; 
@@ -25,10 +27,12 @@ PYBIND11_MODULE(example, m) {
     // Class active brownian particle
     py::class_<ABP_2d>(m, "ABP_2d")
         // Static members
-        .def_readwrite("positions", &ABP_2d::positions)
-        .def_readwrite("thetas", &ABP_2d::thetas)
+        .def_readwrite("position_x", &ABP_2d::position_x)
+        .def_readwrite("position_y", &ABP_2d::position_y)
+        .def_readwrite("theta", &ABP_2d::theta)
         .def_readwrite("bool_reactant", &ABP_2d::bool_reactant)
         .def_readwrite("bool_target", &ABP_2d::bool_target)
+        .def_readwrite("num_steps", &ABP_2d::num_steps)
         .def_readwrite("dt", &ABP_2d::dt)
         .def_readwrite("v", &ABP_2d::v)
         .def_readwrite("D_r", &ABP_2d::D_r)
@@ -39,8 +43,7 @@ PYBIND11_MODULE(example, m) {
         .def_readwrite("w", &ABP_2d::w)
         .def_readwrite("reactant", &ABP_2d::reactant)
         // Functions
-        .def(py::init<region&, double&, double&, double&, double&, double&, double&, double&, double&>())
-        .def("apply_pbc_to_point", &ABP_2d::apply_pbc_to_point)
+        .def(py::init<const region&,const region&, unsigned&, double&, double&, double&, double&, double&, double&, double&, double&>())
         .def("apply_pbc", &ABP_2d::apply_pbc)
         .def("pbc_distance", &ABP_2d::pbc_distance)
         .def("potential", &ABP_2d::potential)
