@@ -1,4 +1,3 @@
-
 FC = g++
 FCLAGS = -O3 -Wall -shared -std=c++11 -undefined dynamic_lookup 
 PBFLAGS = $$(python3.9 -m pybind11 --includes)
