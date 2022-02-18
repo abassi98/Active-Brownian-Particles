@@ -12,6 +12,9 @@
 #include <complex>
 #include <cstdlib>
 
+#ifndef FUNCTIONS_H
+#define FUNCTIONS_H
+
 using namespace std;
 
 class point{
@@ -82,6 +85,4 @@ class ABP_2d
 
 };
 
-
-
-
+#endif // FUNCTIONS_H
