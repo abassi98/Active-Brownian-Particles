@@ -41,3 +41,5 @@
 # Other
 *.dSYM
 *.txt
+*.ipynb_checkpoints
+
