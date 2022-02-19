@@ -25,9 +25,16 @@ region::region(double _x, double _y, double _radius) : point(_x,_y) {
     radius = _radius;
 }
 
-point getVector(const point&A, const point& B){
-  // Get the vector  pointing from B to A
-  point C(0.0,0.0);
+point getVector(const point& A, const point& B){
+  /**
+   * @brief Get the vector connecting B to point
+   * 
+   * @param B is the second point
+   * 
+   * @return a point connecting two points
+   * 
+   */
+  point C;
   C.x = A.x - B.x;
   C.y = A.y - B.y;
   return C;
@@ -36,11 +43,19 @@ point getVector(const point&A, const point& B){
 
 ABP_2d::ABP_2d(const region &_reactant,  const region &_target, unsigned &_num_steps, double &_dt, double &_v, double &_D_r, double &_D_theta, double &_k, double &_L, double & _mu, double &_w){
     /**
-     * @brief Constructor: initialize the position and the orientation of the particle
-     * make sure to call it before any dynamics step
+     * @brief Default constructor, accept parameters and perform validity checks
      * 
-     * @param reactant is the initial region, initital position randomly drawn inside it
-     * @param init_theta is the initial orientation
+     * @param _reactant is the initial region, initital position chosen at zero, direction drawn randomly in [0,2*pi]
+     * @param _target is the target region the particle aim to search
+     * @param _num_steps is the total number of steps of the long dynamics
+     * @param _dt is the timestep of discretized dynamics
+     * @param _v is the module of the velocity
+     * @param _D_r is the diffusion coefficient for updating the position of the particle
+     * @param  _D_theta is the diffusion coefficient for the direction
+     * @param _k is a constant measuring the strenght of the force
+     * @param _L is the length scale oif the periodic potential (dynamics runs with periodic boundary conditions in the square [-L/8,L/8]**2)
+     * @param _mu is a coefficient measuring how much the particle feels the potential
+     * @param _w is the velocity of direction update (chirality of the particle)
      * 
      */
 
@@ -118,7 +133,7 @@ double ABP_2d::pbc_distance(const point&A, const point &B){
      * @brief Compute the distance between points with periodic boundary conditions
      * 
      */
-    point C = getVector(A,B);
+    point C = getVector(A, B);
     apply_pbc(C);
     
     return sqrt(C.x*C.x + C.y*C.y);
@@ -136,24 +151,25 @@ double ABP_2d::potential(const point &_r){
 
 point ABP_2d::compute_force(const point& position){
     /**
-     * @brief Compute force acting on a particle due to potential, take its last position
-     * To called after there is at least one element in positions
+     * @brief Compute force acting on a point due to potential
      * 
      */
-    point force(0.0,0.0);
+    point force;
 
     // Compute force
     force.x = - 8.0*M_PI/L*k*cos(8*M_PI*(position.x + 3./16.*L)/L);
     force.y = - 8.0*M_PI/L*k*cos(8*M_PI*(position.y + 3./16.*L)/L);
-
     return force;
-
 }
 
 void ABP_2d::position_step(point &position, const double &theta, const double &noise_x, const double &noise_y){
     /**
-     * @brief Update position according to dynamics
-     * To be called after __init__()
+     * @brief Update position according to stochastic dynamics
+     * 
+     * @param position is the actual position of the particle
+     * @param theta is the direction of the particle velocity
+     * @param noise_x is the white gaussian noise along x direction
+     * @param noise_y is the white gaussian noise along y direction
      * 
      */
 
@@ -173,6 +189,9 @@ void ABP_2d::theta_step(double &theta, double &noise_theta){
     /**
      * @brief Update orientation according to dynamics
      * 
+     * @param theta is the direction of the velocity
+     * @param noise_theta is the white gaussian noise for direction
+     * 
      */
     theta += + w*dt + sqrt(2*D_theta*dt)*noise_theta;
 }
@@ -183,6 +202,8 @@ bool ABP_2d::is_near_minimum(point &_r){
     /**
      * @brief Check if the position is inside a minimum region
      * Defined to have potential energy <=-1.5
+     * 
+     * @param _r is the position to be checked
      * 
      */
     bool is_near = false;
@@ -199,6 +220,11 @@ bool ABP_2d::is_near_minimum(point &_r){
 bool ABP_2d::is_inside_region(const point &A,  const region &target){
     /**
      * @brief Check if the point lies inside a region with pbc
+     * 
+     * @param A is the position to be checked
+     * @param target is the region
+     * 
+     * @return true if A is inside target, false otherwise
      */
     bool is_inside = false;
 
@@ -213,13 +239,7 @@ bool ABP_2d::is_inside_region(const point &A,  const region &target){
 void ABP_2d::dynamics(){
     /**
      * @brief Run dynamics for many steps and compute statistics
-     * 
-     * @param target is the target region to hit
-     * @param max_num_steps is the maximum number of time steps allowed to run a particle dynamics
-     * 
-     * @return print on a file a unsigned sequence, 0 if the particle is inside the reactant, 
-     * 1 if it is outside of everything, 2 if it is inside target and
-     * return error if it is in both (impossible)
+     *
      */
     
 

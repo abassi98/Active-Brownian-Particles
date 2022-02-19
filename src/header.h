@@ -23,6 +23,8 @@ class point{
         double distance_to_point(const point&);
 };
 
+point getVector(const point&,const point &);
+
 class region : public point  {
     public:
         double radius;
@@ -31,7 +33,7 @@ class region : public point  {
 };
 
 
-point getVector(const point&, const point &);
+
 
 
 class ABP_2d
