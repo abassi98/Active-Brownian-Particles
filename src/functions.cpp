@@ -19,6 +19,9 @@ region::region() : point() {
     radius = 0;
 }
 region::region(double _x, double _y, double _radius) : point(_x,_y) {
+    if(_radius<0){
+        throw invalid_argument("Received negative radius");
+    }
     radius = _radius;
 }
 
@@ -57,7 +60,21 @@ ABP_2d::ABP_2d(const region &_reactant,  const region &_target, unsigned &_num_s
     // Set reactant region
     reactant = _reactant;
     target = _target;
+    // Apply pbc
+    apply_pbc(reactant);
+    apply_pbc(target);
 
+    // Check if they overlap
+    if(pbc_distance(reactant, target)<(reactant.radius+target.radius)){
+        throw invalid_argument("Received overlapping regions");
+    }
+
+    // Check other parameters
+    if(_dt<0){throw invalid_argument("Received negative timestep");}
+    if(_v<0){throw invalid_argument("Received negative velocity");}
+    if(_D_r<0){throw invalid_argument("Received negative diffusion coefficient");}
+    if(_D_theta<0){throw invalid_argument("Received negative diffusion coefficient");}
+    if(_L<0){throw invalid_argument("Received null volume");}
 
     // Generate starting point at the center of reactant
     point start_point(reactant.x,reactant.y);
@@ -249,7 +266,7 @@ void ABP_2d::dynamics(){
         if(is_exing_reactant){
             reactive = true;}
 
-        // Set reactive bool false when particle is the reactant again and set falsethe whole previous reactive path
+        // Set reactive bool false when particle is the reactant again and set false the whole previous reactive path
         if(is_entering_reactant){
             reactive = false;
             for(unsigned i=0; i<count_reactive;++i){
