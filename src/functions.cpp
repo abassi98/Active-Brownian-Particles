@@ -242,6 +242,8 @@ void ABP_2d::dynamics(){
      *
      */
     
+    // Computation clocks
+    clock_t start, end;
 
     // Dynamical variables
     point position;
@@ -264,6 +266,8 @@ void ABP_2d::dynamics(){
     normal_distribution<double> normal_y;
     normal_distribution<double> normal_theta;
 
+    // Starting time
+    start = clock();
     // Run a super dynamics of max_num_steps steps
     for (unsigned step=0; step<num_steps; ++step){
         // Generate white gaussian noise
@@ -319,6 +323,9 @@ void ABP_2d::dynamics(){
         is_inside_reactant = bool_reactant.back();
         is_inside_target = bool_target.back();
     }
+    // End time
+    end = clock();
+    cout<<"Total time to perform dynamics: "<<1.0*(end-start)/CLOCKS_PER_SEC<<" s"<<endl;
 }
 
 
