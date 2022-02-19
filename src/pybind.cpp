@@ -32,6 +32,7 @@ PYBIND11_MODULE(abp, m) {
         .def_readwrite("theta", &ABP_2d::theta)
         .def_readwrite("bool_reactant", &ABP_2d::bool_reactant)
         .def_readwrite("bool_target", &ABP_2d::bool_target)
+        .def_readwrite("reactive_path", &ABP_2d::reactive_path)
         .def_readwrite("num_steps", &ABP_2d::num_steps)
         .def_readwrite("dt", &ABP_2d::dt)
         .def_readwrite("v", &ABP_2d::v)

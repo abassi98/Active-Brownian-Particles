@@ -44,6 +44,7 @@ class ABP_2d
         vector<double> theta;
         vector<bool> bool_reactant;
         vector<bool> bool_target;
+        vector<bool> reactive_path;
 
         // Coefficients 
         unsigned num_steps;

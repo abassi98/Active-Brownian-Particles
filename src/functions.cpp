@@ -52,6 +52,7 @@ ABP_2d::ABP_2d(const region &_reactant,  const region &_target, unsigned &_num_s
     theta.clear();
     bool_reactant.clear();
     bool_target.clear();
+    reactive_path.clear();
 
     // Set reactant region
     reactant = _reactant;
@@ -70,6 +71,7 @@ ABP_2d::ABP_2d(const region &_reactant,  const region &_target, unsigned &_num_s
     theta.push_back(start_theta);
     bool_reactant.push_back(is_inside_region(start_point, reactant));
     bool_target.push_back(is_inside_region(start_point, target));
+    reactive_path.push_back(false);
 
     // Set parameters
     dt = _dt;
@@ -207,11 +209,18 @@ void ABP_2d::dynamics(){
     // Dynamical variables
     point position;
     double theta_dyn;
+    bool is_inside_reactant;
+    bool is_inside_target;
+    bool reactive;
 
     // Set initial values
     position.x = position_x.back();
     position.y = position_y.back();
     theta_dyn = theta.back();
+    is_inside_reactant = bool_reactant.back();
+    is_inside_target = bool_target.back();
+    reactive = reactive_path.back();
+    unsigned count_reactive = 0;
 
     // Random generator
     normal_distribution<double> normal_x;
@@ -229,12 +238,49 @@ void ABP_2d::dynamics(){
         position_step(position, theta_dyn, noise_x, noise_y); // Update the position, appending the new posistion to the queu of the positions vector
         theta_step(theta_dyn, noise_theta); // Update the angle theta, appending the new angle to the queu of the positions vector
 
-        // Append positions
+        // Take next bools
+        bool next_is_inside_reactant = is_inside_region(position, reactant);
+        bool next_is_inside_target = is_inside_region(position, target);
+        bool is_exing_reactant = is_inside_reactant && !next_is_inside_reactant;
+        bool is_entering_target = !is_inside_target && next_is_inside_target;
+        bool is_entering_reactant = !is_inside_reactant && next_is_inside_reactant;
+
+        // Set reactive bool true when the particle is exing reactant region
+        if(is_exing_reactant){
+            reactive = true;}
+
+        // Set reactive bool false when particle is the reactant again and set falsethe whole previous reactive path
+        if(is_entering_reactant){
+            reactive = false;
+            for(unsigned i=0; i<count_reactive;++i){
+                reactive_path[reactive_path.size()-i-1] = false;
+            }
+            count_reactive = 0; // Set counter to zero
+        }
+
+        // Set reactive bool false when the particle is entering target and sety count to zero
+        if(is_entering_target){
+            reactive = false;
+            count_reactive = 0;
+        }
+
+        // Update counter when reactive bool is true
+        if(reactive){
+            ++count_reactive;
+        }
+        // Append to reactive_path
+        reactive_path.push_back(reactive);
+
+        // Append positions and bools
         position_x.push_back(position.x);
         position_y.push_back(position.y);
         theta.push_back(theta_dyn);
-        bool_reactant.push_back(is_inside_region(position, reactant));
-        bool_target.push_back(is_inside_region(position, target));
+        bool_reactant.push_back(next_is_inside_reactant);
+        bool_target.push_back(next_is_inside_target);
+
+        // Set new states for bool conidti
+        is_inside_reactant = bool_reactant.back();
+        is_inside_target = bool_target.back();
     }
 }
 
