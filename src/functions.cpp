@@ -104,6 +104,7 @@ ABP_2d::ABP_2d(const region &_reactant,  const region &_target, unsigned &_num_s
     bool_reactant.push_back(is_inside_region(start_point, reactant));
     bool_target.push_back(is_inside_region(start_point, target));
     reactive_path.push_back(false);
+    transition_path.push_back(false);
 
     // Set parameters
     dt = _dt;
@@ -114,6 +115,10 @@ ABP_2d::ABP_2d(const region &_reactant,  const region &_target, unsigned &_num_s
     L = _L;
     mu = _mu;
     w = _w;
+
+    // Dynamics statistics
+    step = 0;
+    time = 0.0;
     
 }
 
@@ -124,6 +129,22 @@ void ABP_2d::apply_pbc(point &A){
     if(A.x < -L/8) {A.x += L/4;}
     if(A.y > L/8) {A.y -= L/4;}
     if(A.y < -L/8) {A.y += L/4;}
+}
+
+void ABP_2d::apply_pbc_to_theta(double &theta){
+    /**
+     * @brief Translate theta in [0,2*pi] no matter its value
+     * 
+     * @param theta is the direction of the particle
+     */
+
+    int num_pi = theta/M_PI;
+    if(theta>M_PI){
+        theta += (-1 - num_pi)*M_PI;
+    }
+    if(theta<-M_PI){
+        theta += (1 - num_pi)*M_PI;
+    }
 }
 
 
@@ -193,7 +214,12 @@ void ABP_2d::theta_step(double &theta, double &noise_theta){
      * @param noise_theta is the white gaussian noise for direction
      * 
      */
+
+    // Compute next direction
     theta += + w*dt + sqrt(2*D_theta*dt)*noise_theta;
+
+    // Apply periodic boundary conditions
+    apply_pbc_to_theta(theta);
 }
 
 
@@ -236,7 +262,7 @@ bool ABP_2d::is_inside_region(const point &A,  const region &target){
 }
 
 
-void ABP_2d::dynamics(){
+void ABP_2d::dynamics(bool track_in_reactant=false, bool track_in_target=false, bool track_reactive_path=true, bool track_transition_path=true){
     /**
      * @brief Run dynamics for many steps and compute statistics
      *
@@ -250,7 +276,9 @@ void ABP_2d::dynamics(){
     double theta_dyn;
     bool is_inside_reactant;
     bool is_inside_target;
-    bool reactive;
+    bool reactive = false;
+    bool transition = false;
+    bool has_ever_visited_target = false;
 
     // Set initial values
     position.x = position_x.back();
@@ -269,7 +297,7 @@ void ABP_2d::dynamics(){
     // Starting time
     start = clock();
     // Run a super dynamics of max_num_steps steps
-    for (unsigned step=0; step<num_steps; ++step){
+    for (unsigned i=0; i<num_steps; ++i){
         // Generate white gaussian noise
         double noise_x = normal_x(engine);
         double noise_y = normal_y(engine);
@@ -286,46 +314,64 @@ void ABP_2d::dynamics(){
         bool is_entering_target = !is_inside_target && next_is_inside_target;
         bool is_entering_reactant = !is_inside_reactant && next_is_inside_reactant;
 
-        // Set reactive bool true when the particle is exing reactant region
-        if(is_exing_reactant){
-            reactive = true;}
 
-        // Set reactive bool false when particle is the reactant again and set false the whole previous reactive path
-        if(is_entering_reactant){
-            reactive = false;
-            for(unsigned i=0; i<count_reactive;++i){
-                reactive_path[reactive_path.size()-i-1] = false;
+        // Track reactive paths
+        // Defined as those for which the particle reaches T region after exing R before visiting again R
+        if(track_reactive_path){
+            // Set reactive bool true when the particle is exing reactant region
+            if(is_exing_reactant){
+                reactive = true;}
+            // Set reactive bool false when particle is the reactant again and set false the whole previous reactive path
+            if(is_entering_reactant){
+                reactive = false;
+                for(unsigned i=0; i<count_reactive;++i){
+                    reactive_path[reactive_path.size()-i-1] = false;
+                }
+                count_reactive = 0; // Set counter to zero
             }
-            count_reactive = 0; // Set counter to zero
+            // Set reactive bool false when the particle is entering target and sety count to zero
+            if(is_entering_target){
+                reactive = false;
+                count_reactive = 0;
+            }
+            // Update counter when reactive bool is true
+            if(reactive){
+                ++count_reactive;
+            }
+            // Append to reactive_path
+            reactive_path.push_back(reactive);
         }
-
-        // Set reactive bool false when the particle is entering target and sety count to zero
-        if(is_entering_target){
-            reactive = false;
-            count_reactive = 0;
+        
+        // Track transition times
+        // Defined as those for which the particle enters R after having visited T till it goes back to T
+        if(track_transition_path){
+            if(is_inside_target){has_ever_visited_target=true;}
+            if(has_ever_visited_target){
+                if(is_entering_reactant){transition=true;}
+                if(is_entering_target){transition=false;}
+            }
+            transition_path.push_back(transition);
         }
-
-        // Update counter when reactive bool is true
-        if(reactive){
-            ++count_reactive;
-        }
-        // Append to reactive_path
-        reactive_path.push_back(reactive);
 
         // Append positions and bools
         position_x.push_back(position.x);
         position_y.push_back(position.y);
         theta.push_back(theta_dyn);
-        bool_reactant.push_back(next_is_inside_reactant);
-        bool_target.push_back(next_is_inside_target);
 
-        // Set new states for bool conidti
-        is_inside_reactant = bool_reactant.back();
-        is_inside_target = bool_target.back();
+        // Check track conditions and push_back
+        if(track_in_reactant){bool_reactant.push_back(next_is_inside_reactant);}
+        if(track_in_target){bool_target.push_back(next_is_inside_target);}
+
+        // Set new states for bool conditions
+        is_inside_reactant = next_is_inside_reactant;
+        is_inside_target = next_is_inside_target;
+
+        // Update dynamics counter
+        ++step;
     }
     // End time
     end = clock();
-    cout<<"Total time to perform dynamics: "<<1.0*(end-start)/CLOCKS_PER_SEC<<" s"<<endl;
+    time += 1.0*(end-start)/CLOCKS_PER_SEC;
 }
 
 

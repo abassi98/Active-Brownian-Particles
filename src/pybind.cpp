@@ -33,6 +33,7 @@ PYBIND11_MODULE(abp, m) {
         .def_readwrite("bool_reactant", &ABP_2d::bool_reactant)
         .def_readwrite("bool_target", &ABP_2d::bool_target)
         .def_readwrite("reactive_path", &ABP_2d::reactive_path)
+        .def_readwrite("transition_path", &ABP_2d::transition_path)
         .def_readwrite("num_steps", &ABP_2d::num_steps)
         .def_readwrite("dt", &ABP_2d::dt)
         .def_readwrite("v", &ABP_2d::v)
@@ -42,7 +43,10 @@ PYBIND11_MODULE(abp, m) {
         .def_readwrite("L", &ABP_2d::L)
         .def_readwrite("mu", &ABP_2d::mu)
         .def_readwrite("w", &ABP_2d::w)
+        .def_readwrite("step", &ABP_2d::step)
+        .def_readwrite("time", &ABP_2d::time)
         .def_readwrite("reactant", &ABP_2d::reactant)
+        .def_readwrite("target", &ABP_2d::target)
         // Functions
         .def(py::init<const region&,const region&, unsigned&, double&, double&, double&, double&, double&, double&, double&, double&>(),
         py::arg("reactant"), py::arg("target"), py::arg("num_steps"), py::arg("dt"), py::arg("v"), py::arg("D_r"), py::arg("D_theta"),
@@ -55,7 +59,7 @@ PYBIND11_MODULE(abp, m) {
         .def("theta_step", &ABP_2d::theta_step, py::arg("theta"), py::arg("noise_theta"))
         .def("is_near_minimum", &ABP_2d::is_near_minimum, py::arg("position"))
         .def("is_inside_region", &ABP_2d::is_inside_region, py::arg("position"), py::arg("target"))
-        .def("dynamics", &ABP_2d::dynamics)
+        .def("dynamics", &ABP_2d::dynamics, py::arg("track_in_reactant")=false,  py::arg("track_in_target")=false,  py::arg("track_reactive_path")=true,  py::arg("track_transition_path")=true )
         .def("print_dynamics", &ABP_2d::print_dynamics, py::arg("filename"))
         .def("print_bool_dynamics", &ABP_2d::print_bool_dynamics, py::arg("filename"));
 }

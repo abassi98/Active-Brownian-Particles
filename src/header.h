@@ -47,6 +47,7 @@ class ABP_2d
         vector<bool> bool_reactant;
         vector<bool> bool_target;
         vector<bool> reactive_path;
+        vector<bool> transition_path;
 
         // Coefficients 
         unsigned num_steps;
@@ -59,6 +60,10 @@ class ABP_2d
         double mu;
         double w;
 
+        // Dynamics time statistics
+        unsigned step;
+        double time;
+
         // Reactant region
         region reactant;
         region target;
@@ -70,6 +75,7 @@ class ABP_2d
 
     
         void apply_pbc(point&);
+        void apply_pbc_to_theta(double&);
         double pbc_distance(const point&, const point&);
 
         double potential(const point&);
@@ -79,7 +85,7 @@ class ABP_2d
         bool is_near_minimum(point&);
 
         bool is_inside_region(const point&, const region&);
-        void dynamics();
+        void dynamics(bool, bool, bool, bool);
         void print_dynamics(string&);
         void print_bool_dynamics(string&);
 
