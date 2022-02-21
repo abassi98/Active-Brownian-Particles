@@ -59,9 +59,7 @@ ABP_2d::ABP_2d(const region &_reactant,  const region &_target, unsigned &_num_s
      * 
      */
 
-    // Random generator 
-    uniform_real_distribution<double> uniform_r(0.0, 1.0);
-    uniform_real_distribution<double> uniform_theta(0.0, 2*M_PI);
+
 
     // Allocate memory
     num_steps = _num_steps;
@@ -79,10 +77,11 @@ ABP_2d::ABP_2d(const region &_reactant,  const region &_target, unsigned &_num_s
     apply_pbc(reactant);
     apply_pbc(target);
 
+    /*
     // Check if they overlap
     if(pbc_distance(reactant, target)<(reactant.radius+target.radius)){
         throw invalid_argument("Received overlapping regions");
-    }
+    }*/
 
     // Check other parameters
     if(_dt<0){throw invalid_argument("Received negative timestep");}
@@ -91,9 +90,10 @@ ABP_2d::ABP_2d(const region &_reactant,  const region &_target, unsigned &_num_s
     if(_D_theta<0){throw invalid_argument("Received negative diffusion coefficient");}
     if(_L<0){throw invalid_argument("Received null volume");}
 
+
     // Generate starting point at the center of reactant
     point start_point(reactant.x,reactant.y);
-    double start_theta = uniform_theta(engine);
+    double start_theta = 0.0;
     apply_pbc(start_point); // pbc
     
 
@@ -138,7 +138,7 @@ void ABP_2d::apply_pbc_to_theta(double &theta){
      * @param theta is the direction of the particle
      */
 
-    int num_pi = theta/M_PI;
+    int num_pi = (int) theta/M_PI;
     if(theta>M_PI){
         theta += (-1 - num_pi)*M_PI;
     }
@@ -199,14 +199,14 @@ void ABP_2d::position_step(point &position, const double &theta, const double &n
     point force = compute_force(position);
 
     // Compute next position
-    position.x +=  v*cos(theta)*dt + sqrt(2*D_r*dt)*noise_x + mu*force.x*dt;
-    position.y += v*sin(theta)*dt + sqrt(2*D_r*dt)*noise_y + mu*force.y*dt;
+    position.x +=  v*cos(theta)*dt + sqrt(2.*D_r*dt + 1e-08)*noise_x + mu*force.x*dt;
+    position.y += v*sin(theta)*dt + sqrt(2.*D_r*dt + 1e-08)*noise_y + mu*force.y*dt;
 
     // Apply periodic boundary conditinos
     apply_pbc(position);
 }
 
-void ABP_2d::theta_step(double &theta, double &noise_theta){   
+void ABP_2d::theta_step(double &theta, const double &noise_theta){   
     /**
      * @brief Update orientation according to dynamics
      * 
@@ -216,7 +216,7 @@ void ABP_2d::theta_step(double &theta, double &noise_theta){
      */
 
     // Compute next direction
-    theta += + w*dt + sqrt(2*D_theta*dt)*noise_theta;
+    theta += w*dt + sqrt(2.*D_theta*dt +1e-08)*noise_theta;
 
     // Apply periodic boundary conditions
     apply_pbc_to_theta(theta);
@@ -287,21 +287,24 @@ void ABP_2d::dynamics(bool track_in_reactant=false, bool track_in_target=false, 
     is_inside_reactant = bool_reactant.back();
     is_inside_target = bool_target.back();
     reactive = reactive_path.back();
+    transition = transition_path.back();
     unsigned count_reactive = 0;
 
     // Random generator
+    default_random_engine engine;
     normal_distribution<double> normal_x;
     normal_distribution<double> normal_y;
     normal_distribution<double> normal_theta;
 
     // Starting time
     start = clock();
+    srand(0);
     // Run a super dynamics of max_num_steps steps
     for (unsigned i=0; i<num_steps; ++i){
         // Generate white gaussian noise
         double noise_x = normal_x(engine);
-        double noise_y = normal_y(engine);
-        double noise_theta = normal_theta(engine);
+        double noise_y = normal_x(engine);
+        double noise_theta = normal_x(engine);
 
         // Dynamics steps
         position_step(position, theta_dyn, noise_x, noise_y); // Update the position, appending the new posistion to the queu of the positions vector
@@ -321,6 +324,13 @@ void ABP_2d::dynamics(bool track_in_reactant=false, bool track_in_target=false, 
             // Set reactive bool true when the particle is exing reactant region
             if(is_exing_reactant){
                 reactive = true;}
+
+            // Set reactive bool false when the particle is entering target and sety count to zero
+            if(is_entering_target){
+                reactive = false;
+                count_reactive = 0;
+            }
+            
             // Set reactive bool false when particle is the reactant again and set false the whole previous reactive path
             if(is_entering_reactant){
                 reactive = false;
@@ -329,11 +339,7 @@ void ABP_2d::dynamics(bool track_in_reactant=false, bool track_in_target=false, 
                 }
                 count_reactive = 0; // Set counter to zero
             }
-            // Set reactive bool false when the particle is entering target and sety count to zero
-            if(is_entering_target){
-                reactive = false;
-                count_reactive = 0;
-            }
+            
             // Update counter when reactive bool is true
             if(reactive){
                 ++count_reactive;

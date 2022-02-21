@@ -1,7 +1,6 @@
 #include <iostream>
 #include <stdexcept>
 #include <vector>
-#include <cmath>
 #include <fstream>
 #include <random>
 #include <math.h>
@@ -68,8 +67,7 @@ class ABP_2d
         region reactant;
         region target;
 
-        // Random generator
-        default_random_engine engine;
+        
 
         ABP_2d(const region&, const region&, unsigned&, double&, double&, double&, double&, double&, double&, double&, double& );
 
@@ -81,7 +79,7 @@ class ABP_2d
         double potential(const point&);
         point compute_force(const point&);
         void position_step(point&, const double &, const double&, const double&);
-        void theta_step(double&, double&);
+        void theta_step(double&, const double&);
         bool is_near_minimum(point&);
 
         bool is_inside_region(const point&, const region&);
