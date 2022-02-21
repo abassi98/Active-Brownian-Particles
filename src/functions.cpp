@@ -324,12 +324,6 @@ void ABP_2d::dynamics(bool track_in_reactant=false, bool track_in_target=false, 
             // Set reactive bool true when the particle is exing reactant region
             if(is_exing_reactant){
                 reactive = true;}
-
-            // Set reactive bool false when the particle is entering target and sety count to zero
-            if(is_entering_target){
-                reactive = false;
-                count_reactive = 0;
-            }
             
             // Set reactive bool false when particle is the reactant again and set false the whole previous reactive path
             if(is_entering_reactant){
@@ -338,6 +332,12 @@ void ABP_2d::dynamics(bool track_in_reactant=false, bool track_in_target=false, 
                     reactive_path[reactive_path.size()-i-1] = false;
                 }
                 count_reactive = 0; // Set counter to zero
+            }
+            
+             // Set reactive bool false when the particle is entering target and sety count to zero
+            if(is_entering_target){
+                reactive = false;
+                count_reactive = 0;
             }
             
             // Update counter when reactive bool is true
