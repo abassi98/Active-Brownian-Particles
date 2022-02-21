@@ -138,12 +138,12 @@ void ABP_2d::apply_pbc_to_theta(double &theta){
      * @param theta is the direction of the particle
      */
 
-    int num_pi = (int) theta/M_PI;
+    // Translate in interval [0,2pi]
     if(theta>M_PI){
-        theta += (-1 - num_pi)*M_PI;
+        theta -= 2*M_PI;
     }
     if(theta<-M_PI){
-        theta += (1 - num_pi)*M_PI;
+        theta += 2*M_PI;
     }
 }
 
@@ -199,8 +199,8 @@ void ABP_2d::position_step(point &position, const double &theta, const double &n
     point force = compute_force(position);
 
     // Compute next position
-    position.x +=  v*cos(theta)*dt + sqrt(2.*D_r*dt + 1e-08)*noise_x + mu*force.x*dt;
-    position.y += v*sin(theta)*dt + sqrt(2.*D_r*dt + 1e-08)*noise_y + mu*force.y*dt;
+    position.x +=  v*cos(theta)*dt + sqrt(2.*D_r*dt)*noise_x + mu*force.x*dt;
+    position.y += v*sin(theta)*dt + sqrt(2.*D_r*dt)*noise_y + mu*force.y*dt;
 
     // Apply periodic boundary conditinos
     apply_pbc(position);
@@ -216,7 +216,7 @@ void ABP_2d::theta_step(double &theta, const double &noise_theta){
      */
 
     // Compute next direction
-    theta += w*dt + sqrt(2.*D_theta*dt +1e-08)*noise_theta;
+    theta += w*dt + sqrt(2.*D_theta*dt)*noise_theta;
 
     // Apply periodic boundary conditions
     apply_pbc_to_theta(theta);
@@ -303,10 +303,10 @@ void ABP_2d::dynamics(bool track_in_reactant=false, bool track_in_target=false, 
     for (unsigned i=0; i<num_steps; ++i){
         // Generate white gaussian noise
         double noise_x = normal_x(engine);
-        double noise_y = normal_x(engine);
-        double noise_theta = normal_x(engine);
+        double noise_y = normal_y(engine);
+        double noise_theta = normal_theta(engine);
 
-        // Dynamics steps
+        // Dynamics stepsss
         position_step(position, theta_dyn, noise_x, noise_y); // Update the position, appending the new posistion to the queu of the positions vector
         theta_step(theta_dyn, noise_theta); // Update the angle theta, appending the new angle to the queu of the positions vector
 
