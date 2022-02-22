@@ -262,7 +262,7 @@ bool ABP_2d::is_inside_region(const point &A,  const region &target){
 }
 
 
-void ABP_2d::dynamics(bool track_in_reactant=false, bool track_in_target=false, bool track_reactive_path=true, bool track_transition_path=true){
+void ABP_2d::dynamics(bool track_in_reactant=true, bool track_in_target=true, bool track_reactive_path=true, bool track_transition_path=true){
     /**
      * @brief Run dynamics for many steps and compute statistics
      *

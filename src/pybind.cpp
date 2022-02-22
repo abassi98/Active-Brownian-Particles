@@ -59,7 +59,7 @@ PYBIND11_MODULE(abp, m) {
         .def("theta_step", &ABP_2d::theta_step, py::arg("theta"), py::arg("noise_theta"))
         .def("is_near_minimum", &ABP_2d::is_near_minimum, py::arg("position"))
         .def("is_inside_region", &ABP_2d::is_inside_region, py::arg("position"), py::arg("target"))
-        .def("dynamics", &ABP_2d::dynamics, py::arg("track_in_reactant")=false,  py::arg("track_in_target")=false,  py::arg("track_reactive_path")=true,  py::arg("track_transition_path")=true )
+        .def("dynamics", &ABP_2d::dynamics, py::arg("track_in_reactant")=true,  py::arg("track_in_target")=true,  py::arg("track_reactive_path")=true,  py::arg("track_transition_path")=true )
         .def("print_dynamics", &ABP_2d::print_dynamics, py::arg("filename"))
         .def("print_bool_dynamics", &ABP_2d::print_bool_dynamics, py::arg("filename"));
 }
