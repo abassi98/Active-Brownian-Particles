@@ -55,6 +55,7 @@ def plot_trajectory(pe_vec, lstar_vec, l_dstar=1.0, num_steps=10**3):
     target = region(x=L/16,y=L/16,radius=L/40.0)
 
     fig =  plt.figure(figsize=(8, 8))
+    plt.title("Trajectories with periodic boundary conditions")
     sax = fig.add_axes([0.06, 0.06, 0.9, 0.9])
 
     # Super grid ticks
@@ -101,6 +102,7 @@ def plot_trajectory(pe_vec, lstar_vec, l_dstar=1.0, num_steps=10**3):
 # Plot single passive particle dynamics
 def plot_single_particle(reactant, target,is_out=False, pe = 0.0, l_star = 1.0, l_dstar=1.0, num_steps=10**7 ):
     fig =  plt.figure(figsize=(4, 4))
+    plt.title("Transition probability density")
     x_ticks = [-L/8, 0, L/8 ]
     x_labels = ["- L/8","0", "L/8" ]
     y_ticks = [0, L/8]
@@ -138,6 +140,7 @@ def plot_single_particle(reactant, target,is_out=False, pe = 0.0, l_star = 1.0, 
 # Plot transition probability density
 def plot_transition_density(reactant, target, pe_vec, lstar_vec, is_out=False, l_dstar=1.0, num_steps=10**7):
     fig =  plt.figure(figsize=(8, 8))
+    plt.title("Transition probability density")
     sax = fig.add_axes([0.06, 0.06, 0.9, 0.9])
 
     # Super grid ticks
@@ -208,6 +211,7 @@ def calculate_reactive_times(bool_array):
 ### Compute average reactive path length
 def plot_reactive_time(reactant, target, pe_vec, lstar_vec, is_out = False, l_dstar=1.0, num_steps=10**5):
     fig =  plt.figure(figsize=(4, 4))
+    plt.title("Transition path-time")
     # Initialize the matrux to save times
     matrix = np.zeros((len(lstar_vec), len(pe_vec)))
   
@@ -236,6 +240,7 @@ def plot_reactive_time(reactant, target, pe_vec, lstar_vec, is_out = False, l_ds
             # Fill matrix
             matrix[i][j] = np.mean(times)    
 
+    
     plt.xlabel("$Pe$")
     plt.ylabel("$\ell^*$", rotation = 0)
     plt.pcolormesh(pe_vec, lstar_vec, matrix, cmap="RdBu")
@@ -245,6 +250,7 @@ def plot_reactive_time(reactant, target, pe_vec, lstar_vec, is_out = False, l_ds
 ### Compute transition rates
 def plot_transition_rates(reactant, target, pe_vec, lstar_vec, is_out = False, l_dstar=1.0, num_steps=10**5):
     fig =  plt.figure(figsize=(4, 4))
+    plt.title("Transition rates")
     # Initialize the matrux to save times
     matrix = np.zeros((len(lstar_vec), len(pe_vec)))
   
@@ -270,6 +276,7 @@ def plot_transition_rates(reactant, target, pe_vec, lstar_vec, is_out = False, l
             # Fill matrix
             matrix[i][j] = 1./np.mean(times)   
 
+    
     plt.xlabel("$Pe$")
     plt.ylabel("$\ell^*$", rotation = 0)
     plt.pcolormesh(pe_vec, lstar_vec, matrix, cmap="RdBu_r")
@@ -281,6 +288,7 @@ def plot_transition_rates(reactant, target, pe_vec, lstar_vec, is_out = False, l
 # Plot transition probability density
 def plot_transition_density_chiral(reactant, target, pe_vec, ldstar_vec, is_out=False, l_star=10**15, num_steps=10**7):
     fig =  plt.figure(figsize=(8, 8))
+    plt.title("Transition probability density")
     sax = fig.add_axes([0.06, 0.06, 0.9, 0.9])
 
     # Super grid ticks
@@ -290,7 +298,7 @@ def plot_transition_density_chiral(reactant, target, pe_vec, ldstar_vec, is_out=
     sax.set_yticks(s_yticks, ldstar_vec)
     sax.grid(False)
     sax.set_xlabel("$Pe$")
-    sax.set_ylabel("$\ell^*$", rotation = 0)
+    sax.set_ylabel("$\ell^{**}$", rotation = 0)
 
 
     x_ticks = [-L/8, 0, L/8 ]
@@ -334,4 +342,82 @@ def plot_transition_density_chiral(reactant, target, pe_vec, ldstar_vec, is_out=
             fig.colorbar(h[3], ax=ax)
 
     #fig.tight_layout(pad=0.2)
+    return fig
+
+### Compute average reactive path length
+def plot_reactive_time_chiral(reactant, target, pe_vec, ldstar_vec, is_out = False, l_star=10**15, num_steps=10**5):
+    fig =  plt.figure(figsize=(4, 4))
+    plt.title("Transition path-time")
+    # Initialize the matrux to save times
+    matrix = np.zeros((len(ldstar_vec), len(pe_vec)))
+  
+
+    for i in range(len(ldstar_vec)):
+        for j in range(len(pe_vec)):
+            pe = pe_vec[j]
+            l_dstar = ldstar_vec[i]
+            v = pe*v_max
+            D_theta = pe*v_max*v_max/(D_r*l_star)
+            # Compute angular velocity (chirality)
+            w = v*v_max/(l_dstar*D_r)
+            
+            # Compute statistics
+            particle = ABP_2d(reactant,target, num_steps = num_steps, dt=dt, v=v, D_r=D_r, D_theta= D_theta, k=k, L=L, mu=mu, w=w)
+            particle.dynamics()
+            
+            #Retrieve data
+            if is_out==True:
+                path = np.logical_and(np.logical_not(particle.bool_reactant), np.logical_not(particle.bool_target))
+            else:
+                path = np.array(particle.reactive_path)
+           
+            # Calculate times
+            times = calculate_reactive_times(path)
+            # Fill matrix
+            matrix[i][j] = np.mean(times)    
+
+    
+    plt.xlabel("$Pe$")
+    plt.ylabel("$\ell^{**}$", rotation = 0)
+    plt.pcolormesh(pe_vec, ldstar_vec, matrix, cmap="RdBu")
+    plt.colorbar()
+    return fig
+
+
+
+
+### Compute transition rates
+def plot_transition_rates_chiral(reactant, target, pe_vec, ldstar_vec, is_out = False, l_star=10**15, num_steps=10**5):
+    fig =  plt.figure(figsize=(4, 4))
+    plt.title("Transition rates")
+    # Initialize the matrux to save times
+    matrix = np.zeros((len(ldstar_vec), len(pe_vec)))
+  
+    
+    for i in range(len(ldstar_vec)):
+        for j in range(len(pe_vec)):
+            pe = pe_vec[j]
+            l_dstar = ldstar_vec[i]
+            v = pe*v_max
+            D_theta = pe*v_max*v_max/(D_r*l_star)
+            # Compute angular velocity (chirality)
+            w = v*v_max/(l_dstar*D_r)
+            # Compute statistics
+            particle = ABP_2d(reactant,target, num_steps = num_steps, dt=dt, v=v, D_r=D_r, D_theta= D_theta, k=k, L=L, mu=mu, w=w)
+            particle.dynamics()
+            # Retireve data
+            if is_out==True:
+                path = np.logical_and(np.logical_not(particle.bool_reactant), np.logical_not(particle.bool_target))
+            else:
+                path = np.array(particle.transition_path)
+            # Calculate times
+            times = calculate_reactive_times(path)
+            # Fill matrix
+            matrix[i][j] = 1./np.mean(times)   
+
+    
+    plt.xlabel("$Pe$")
+    plt.ylabel("$\ell^{**}$", rotation = 0)
+    plt.pcolormesh(pe_vec, ldstar_vec, matrix, cmap="RdBu_r")
+    plt.colorbar()
     return fig
