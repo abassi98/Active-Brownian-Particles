@@ -49,7 +49,7 @@ def plot_potential():
 
 ### Define some useful functions
 # Plot dynamics examples
-def plot_trajectory(pe_vec, lstar_vec, w=0.0, num_steps=10**3):
+def plot_trajectory(pe_vec, lstar_vec, l_dstar=1.0, num_steps=10**3):
     # Define fake target and reactant regions
     reactant = region(x=0,y=0,radius=L/40.0)
     target = region(x=L/16,y=L/16,radius=L/40.0)
@@ -66,12 +66,11 @@ def plot_trajectory(pe_vec, lstar_vec, w=0.0, num_steps=10**3):
     sax.set_xlabel("$Pe$")
     sax.set_ylabel("$\ell^*$", rotation = 0)
 
-
     x_ticks = [-L/8, 0, L/8 ]
     x_labels = ["- L/8","0", "L/8" ]
     y_ticks = [0, L/8]
     y_labels = ["0", "L/8"]
-
+    
     for i in range(len(lstar_vec)):
         for j in range(len(pe_vec)):
             n = i*len(pe_vec)+j
@@ -80,7 +79,10 @@ def plot_trajectory(pe_vec, lstar_vec, w=0.0, num_steps=10**3):
             pe = pe_vec[j]
             l_star = lstar_vec[i]
             v = pe*v_max
-            D_theta = float(pe*v_max*v_max/(1.*l_star))
+            D_theta = pe*v_max*v_max/(D_r*l_star)
+            # Compute angular velocity (chirality)
+            w = v*v_max/(l_dstar*D_r)
+
             # Compute statistics
             particle = ABP_2d(reactant,target, num_steps = num_steps, dt=dt, v=v, D_r=D_r, D_theta= D_theta, k=k, L=L, mu=mu, w=w)
             particle.dynamics()
@@ -97,17 +99,19 @@ def plot_trajectory(pe_vec, lstar_vec, w=0.0, num_steps=10**3):
     return fig
 
 # Plot single passive particle dynamics
-def plot_passive_particle(reactant, target,is_out=False, w=0.0, num_steps=10**7 ):
+def plot_single_particle(reactant, target,is_out=False, pe = 0.0, l_star = 1.0, l_dstar=1.0, num_steps=10**7 ):
     fig =  plt.figure(figsize=(4, 4))
     x_ticks = [-L/8, 0, L/8 ]
     x_labels = ["- L/8","0", "L/8" ]
     y_ticks = [0, L/8]
     y_labels = ["0", "L/8"]
 
+    # Define parameters
+    v = pe*v_max
+    D_theta = pe*v_max*v_max/(D_r*l_star)
+    # Compute angular velocity (chirality)
+    w = v*v_max/(l_dstar*D_r)
 
-    # Define parameters]
-    v = 0
-    D_theta = 0
     # Compute statistics
     particle = ABP_2d(reactant,target, num_steps=num_steps, dt=dt, v=v, D_r=D_r, D_theta= D_theta, k=k, L=L, mu=mu, w=w)
     particle.dynamics()
@@ -132,7 +136,7 @@ def plot_passive_particle(reactant, target,is_out=False, w=0.0, num_steps=10**7 
     return fig
 
 # Plot transition probability density
-def plot_transition_density(reactant, target, pe_vec, lstar_vec, is_out=False, w=0.0, num_steps=10**7):
+def plot_transition_density(reactant, target, pe_vec, lstar_vec, is_out=False, l_dstar=1.0, num_steps=10**7):
     fig =  plt.figure(figsize=(8, 8))
     sax = fig.add_axes([0.06, 0.06, 0.9, 0.9])
 
@@ -159,7 +163,10 @@ def plot_transition_density(reactant, target, pe_vec, lstar_vec, is_out=False, w
             pe = pe_vec[j]
             l_star = lstar_vec[i]
             v = pe*v_max
-            D_theta = float(pe*v_max*v_max/(1.*l_star))
+            D_theta = pe*v_max*v_max/(D_r*l_star)
+            # Compute angular velocity (chirality)
+            w = v*v_max/(l_dstar*D_r)
+            
             # Compute statistics
             particle = ABP_2d(reactant,target, num_steps = num_steps, dt=dt, v=v, D_r=D_r, D_theta= D_theta, k=k, L=L, mu=mu, w=w)
             particle.dynamics()
@@ -199,17 +206,21 @@ def calculate_reactive_times(bool_array):
 
 
 ### Compute average reactive path length
-def plot_reactive_time(reactant, target, pe_vec, lstar_vec, is_out = False, w=0.0, num_steps=10**5):
+def plot_reactive_time(reactant, target, pe_vec, lstar_vec, is_out = False, l_dstar=1.0, num_steps=10**5):
     fig =  plt.figure(figsize=(4, 4))
     # Initialize the matrux to save times
     matrix = np.zeros((len(lstar_vec), len(pe_vec)))
+  
 
     for i in range(len(lstar_vec)):
         for j in range(len(pe_vec)):
             pe = pe_vec[j]
             l_star = lstar_vec[i]
             v = pe*v_max
-            D_theta = float(pe*v_max*v_max/l_star)
+            D_theta = pe*v_max*v_max/(D_r*l_star)
+            # Compute angular velocity (chirality)
+            w = v*v_max/(l_dstar*D_r)
+            
             # Compute statistics
             particle = ABP_2d(reactant,target, num_steps = num_steps, dt=dt, v=v, D_r=D_r, D_theta= D_theta, k=k, L=L, mu=mu, w=w)
             particle.dynamics()
@@ -232,17 +243,20 @@ def plot_reactive_time(reactant, target, pe_vec, lstar_vec, is_out = False, w=0.
     return fig
 
 ### Compute transition rates
-def plot_transition_rates(reactant, target, pe_vec, lstar_vec, is_out = False, w=0.0, num_steps=10**5):
+def plot_transition_rates(reactant, target, pe_vec, lstar_vec, is_out = False, l_dstar=1.0, num_steps=10**5):
     fig =  plt.figure(figsize=(4, 4))
     # Initialize the matrux to save times
     matrix = np.zeros((len(lstar_vec), len(pe_vec)))
+  
     
     for i in range(len(lstar_vec)):
         for j in range(len(pe_vec)):
             pe = pe_vec[j]
             l_star = lstar_vec[i]
             v = pe*v_max
-            D_theta = float(pe*v_max*v_max/l_star)
+            D_theta = pe*v_max*v_max/(D_r*l_star)
+            # Compute angular velocity (chirality)
+            w = v*v_max/(l_dstar*D_r)
             # Compute statistics
             particle = ABP_2d(reactant,target, num_steps = num_steps, dt=dt, v=v, D_r=D_r, D_theta= D_theta, k=k, L=L, mu=mu, w=w)
             particle.dynamics()
@@ -262,3 +276,62 @@ def plot_transition_rates(reactant, target, pe_vec, lstar_vec, is_out = False, w
     plt.colorbar()
     return fig
 
+
+
+# Plot transition probability density
+def plot_transition_density_chiral(reactant, target, pe_vec, ldstar_vec, is_out=False, l_star=10**15, num_steps=10**7):
+    fig =  plt.figure(figsize=(8, 8))
+    sax = fig.add_axes([0.06, 0.06, 0.9, 0.9])
+
+    # Super grid ticks
+    s_xticks = [0.177, 0.4767, 0.7853]
+    s_yticks = [0.78, 0.5, 0.2]
+    sax.set_xticks(s_xticks, pe_vec)
+    sax.set_yticks(s_yticks, ldstar_vec)
+    sax.grid(False)
+    sax.set_xlabel("$Pe$")
+    sax.set_ylabel("$\ell^*$", rotation = 0)
+
+
+    x_ticks = [-L/8, 0, L/8 ]
+    x_labels = ["- L/8","0", "L/8" ]
+    y_ticks = [0, L/8]
+    y_labels = ["0", "L/8"]
+
+    for i in range(len(ldstar_vec)):
+        for j in range(len(pe_vec)):
+            n = i*len(pe_vec)+j
+            ax = fig.add_subplot(3,3,n+1)
+            # Define parameters
+            pe = pe_vec[j]
+            l_dstar = ldstar_vec[i]
+            v = pe*v_max
+            D_theta = pe*v_max*v_max/(D_r*l_star)
+            # Compute angular velocity (chirality)
+            w = v*v_max/(l_dstar*D_r)
+            
+            # Compute statistics
+            particle = ABP_2d(reactant,target, num_steps = num_steps, dt=dt, v=v, D_r=D_r, D_theta= D_theta, k=k, L=L, mu=mu, w=w)
+            particle.dynamics()
+            # Retireve data
+            x_dyn= np.array(particle.position_x)
+            y_dyn = np.array(particle.position_y)
+            reactive_path = np.array(particle.reactive_path)
+            if is_out==True:
+                is_outside = np.logical_and(np.logical_not(particle.bool_reactant), np.logical_not(particle.bool_target))
+                x_dyn = x_dyn[is_outside]
+                y_dyn = y_dyn[is_outside]
+            else:
+                x_dyn = x_dyn[reactive_path]
+                y_dyn = y_dyn[reactive_path]
+                ax.text(target.x, target.y, "T",c = "white", size ="xx-large" , ha = "center", va="center")
+                
+            #Plot
+            h = ax.hist2d(x_dyn, y_dyn, bins = 100,cmap="RdBu_r", density = True)
+            ax.text(reactant.x, reactant.y, "R", c = "white", size ="xx-large", ha = "center" , va="center")
+            ax.set_xticks(x_ticks, x_labels)
+            ax.set_yticks(y_ticks, y_labels)
+            fig.colorbar(h[3], ax=ax)
+
+    #fig.tight_layout(pad=0.2)
+    return fig
